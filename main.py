@@ -44,9 +44,9 @@ while True:
 
 prev_note_choice = None
 
-while True:
+print('\n\nPress cmd+c to quit at any time\n\n')
 
-    print('\n\nPress cmd+c to quit at any time\n\n')
+while True:
 
     note_choice = choice(NOTES_PER_STRING[inp])
     if prev_note_choice == note_choice:
