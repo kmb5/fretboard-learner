@@ -15,3 +15,4 @@ It doesn't pick a new note until you find the correct note.
 - Play the notes written in the terminal window
 - If you play the correct note, it will move along to a next, randomly selected note
 - If you want to quit any time, press cmd+c
+
