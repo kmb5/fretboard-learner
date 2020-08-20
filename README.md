@@ -11,6 +11,7 @@ It tells you a randomly selected note that you need to play on your guitar and t
 It doesn't pick a new note until you find the correct note.
 
 ### Installation & running
+- Install portaudio with homebrew using the command `brew install portaudio` (if you don't have homebrew install it from [here](https://brew.sh/)
 - Install required packages from requirements.txt
 - Go to your terminal and run main.py `python main.py`
 - Input the string you want to play on (E, A, D, G, B or e)
