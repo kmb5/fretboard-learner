@@ -1,10 +1,8 @@
 import sys 
 from PyQt5.QtWidgets import QApplication, QWidget 
-from PyQt5.QtWidgets import QVBoxLayout, QLabel 
+from PyQt5.QtWidgets import QGridLayout, QLabel 
 from PyQt5.QtGui import QFont 
 from PyQt5.QtCore import QTimer, QTime, Qt 
-import sys
-import time
 from random import choice
 import pyaudio
 import numpy as np
@@ -33,27 +31,44 @@ class Window(QWidget):
   
     def __init__(self): 
         super().__init__() 
+        self.setupUI()
+
+    def setupUI(self):
   
         # setting geometry of main window 
         self.setGeometry(100, 100, 800, 400) 
-  
+        
+        note_font = QFont('Arial', 20, QFont.Bold) 
+        labels_font = QFont('Arial', 20)
         # creating a vertical layout 
-        layout = QVBoxLayout() 
-  
-        # creating font object 
-        font = QFont('Arial', 120, QFont.Bold) 
-  
-        # creating a label object 
-        self.label = QLabel() 
-  
-        # setting centre alignment to the label 
-        self.label.setAlignment(Qt.AlignCenter) 
+        layout = QGridLayout()
+
+        # creating labels     
+        self.choosen_string_label = QLabel('Choosen string: ')
+        self.choosen_string = QLabel()
+        self.note_detected_label = QLabel('Note played:')
+        self.note_detected = QLabel()
+        self.note_to_play_label = QLabel('Note to play:')
+        self.note_to_play = QLabel()
+        self.congrats_msg = QLabel()
   
         # setting font to the label 
-        self.label.setFont(font) 
+        self.choosen_string_label.setFont(labels_font)
+        self.choosen_string.setFont(labels_font)
+        self.note_detected_label.setFont(labels_font)
+        self.note_detected.setFont(note_font)
+        self.note_to_play_label.setFont(labels_font) 
+        self.note_to_play.setFont(note_font)
   
-        # adding label to the layout 
-        layout.addWidget(self.label) 
+        # adding widgets to the layout 
+        layout.addWidget(self.choosen_string_label, 1, 0)
+        layout.addWidget(self.choosen_string, 1, 1)
+        layout.addWidget(self.note_to_play_label, 2, 0)
+        layout.addWidget(self.note_to_play, 2, 1)
+        layout.addWidget(self.note_detected_label, 3, 0) 
+        layout.addWidget(self.note_detected, 3, 1)
+        layout.addWidget(self.congrats_msg, 4, 0)
+
   
         # setting the layout to main window 
         self.setLayout(layout) 
@@ -65,12 +80,20 @@ class Window(QWidget):
         timer.timeout.connect(self.getNote) 
   
         # update the timer every 5ms 
-        timer.start(5) 
+        timer.start(33) 
 
-    def 
+    def getNoteTest(self):
 
-    
+        self.choosen_string.setText('E')
+        self.note_to_play.setText('C')
+        self.note_detected.setText('D')
+
     def getNote(self):
+
+        string_to_play = 'E'
+        note_to_play = choice(NOTES_PER_STRING[string_to_play])[:1]
+        self.choosen_string.setText(string_to_play)
+        self.note_to_play.setText(note_to_play)
 
         p = pyaudio.PyAudio()
 
@@ -105,8 +128,16 @@ class Window(QWidget):
                     stream.close()
                     p.terminate()
                     
-                    self.label.setText(most_likely_note)
+                    self.note_detected.setText(most_likely_note)
+
+                    if most_likely_note == note_to_play:
+                        self.congrats_msg.setText('Great job!!')
+                    else:
+                        self.congrats_msg.setText('')
+                    QApplication.processEvents()
                     return most_likely_note
+
+            QApplication.processEvents()
 
   
   
