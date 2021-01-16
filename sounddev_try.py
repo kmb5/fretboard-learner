@@ -26,8 +26,8 @@ pitch_o.set_unit("Hz")
 pitch_o.set_silence(-40)
 pitch_o.set_tolerance(TOLERANCE)
 
-FRAME_SIZE = 1024   # How many samples per frame?
-FRAMES_PER_DETECT = 10
+FRAME_SIZE = 1024  # How many samples per frame?
+FRAMES_PER_DETECT = 10 # How many frames per note detection?
 
 console = Console() # defining Rich console
 
@@ -116,7 +116,6 @@ def play_mode(notes):
             while True:
                 note_played = detect_note()
                 is_right_note = note_played == note_choice
-                #sys.stdout.write(f'\rYou played: {note_played}  ')
                 color = 'green' if is_right_note else 'red' 
                 live.update(generate_panel(row1, note_played, color, score))
                 if is_right_note:
