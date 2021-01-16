@@ -21,3 +21,9 @@ It doesn't pick a new note until you find the correct note.
 - If you play the correct note, it will move along to a next, randomly selected note
 - If you want to quit any time, press cmd+c
 
+### Troubleshooting
+If you are having problems with installing pyaudio, because portaudio.h could not be found (still after installing it via homebrew), then it might be that you have homebrew installed in a non-standard directory, just as I had on one laptop I tested. If that is the issue, follow the steps [here](http://www.cdotson.com/2019/03/installing-pyaudio-on-macos/), but **keep in mind that your homebrew install directory might not be the same as the steps specify**. For example, the exact steps for me were (notice for me homebrew was in `/opt/homebrew` and not in `~/homebrew`:
+```export C_INCLUDE_PATH=/opt/homebrew/include/:$C_INCLUDE_PATH
+export LIBRARY_PATH=/opt/homebrew/lib/:$LIBRARY_PATH
+```
+After this, pip install pyaudio worked flawlessly (and it took me only 2 frustrated hours to figure this out...)
