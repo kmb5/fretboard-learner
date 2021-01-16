@@ -173,8 +173,6 @@ def detect_note():
 
 def choose(choices, choice_name='choices'):
 
-    console.clear()
-
     choices_str = Text(f'Please select from the available {choice_name}:\n\n', 'bold blue')
 
     for i, choice in enumerate(choices):
@@ -194,6 +192,8 @@ def choose(choices, choice_name='choices'):
         show_choices=False,
         show_default=False
     )
+
+    console.clear()
 
     return choices[int(inp) - 1]
 
