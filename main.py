@@ -1,8 +1,9 @@
-#! /usr/bin/env python
 import sys
 import time
 from random import choice
-import pyaudio
+#import pyaudio
+import sounddevice as sd
+from scipy.io.wavfile import write
 import numpy as np
 from aubio import notes, pitch
 from helpers import pitch2note, NOTES_PER_STRING
