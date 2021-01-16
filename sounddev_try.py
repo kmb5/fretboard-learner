@@ -40,29 +40,17 @@ def main():
     console.print(Panel(text), justify='center')
 
     try:
-        game_mode_selector = Text.assemble(
-            ('Please select from the following game modes:\n\n', 'bold blue'),
-            '  (',
-            ('1', 'green'),
-            ') Play random notes on a given string\n',
-            '  (',
-            ('2', 'green'),
-            ') Play random notes in a given scale\n')
 
-        console.print(Panel(game_mode_selector))
+        available_game_modes = {
+            'Play random notes on a given string': mode_1_random_notes,
+            'Play random notes in a given scale': mode_2_scale_notes
+        }
 
-        inp = Prompt.ask(
-            'Select the game mode',
-            default='1',
-            choices=['1', '2'],
-            show_default=False,
-            show_choices=False
-        )
+        game_mode = choose(list(available_game_modes.keys()), choice_name='game modes')
 
-        if inp == '1':
-            mode_1_random_notes()
-        elif inp == '2':
-            mode_2_scale_notes()
+        # play selected game mode
+        available_game_modes[game_mode]()
+
     except KeyboardInterrupt:
         console.clear()
         exit_text = Text('\nThanks for playing! :)\n', justify='center')
@@ -102,12 +90,11 @@ def play_mode(notes):
     with Live(refresh_per_second=20) as live:
         note_choice = ''
         note_played = ''
-        color = 'red'
+        note_color = 'red'
 
         while True:
             note_choice = choice(notes)
-            row1 = f'Play this note: {note_choice}'
-            live.update(generate_panel(row1, note_played, color, score))
+            live.update(generate_panel(notes, note_choice, note_played, note_color, score))
             if prev_note_choice == note_choice:
                 continue
             else:
@@ -116,27 +103,41 @@ def play_mode(notes):
             while True:
                 note_played = detect_note()
                 is_right_note = note_played == note_choice
-                color = 'green' if is_right_note else 'red' 
-                live.update(generate_panel(row1, note_played, color, score))
+                note_color = 'green' if is_right_note else 'red'
+                live.update(generate_panel(notes, note_choice, note_played, note_color, score))
                 if is_right_note:
-                    row1 = '[green]Good job![/]'
+                    note_choice = '[green bold]Good job![/]'
                     score += 1
-                    live.update(generate_panel(row1, note_played, color, score))
-                    # we hit the desired note
+                    live.update(generate_panel(notes, note_choice, note_played, note_color, score))
                     time.sleep(1)
                     break
 
-def generate_panel(row1, note_played, color, score):
+def generate_panel(notes, note_choice, note_played, color, score):
 
-    row2 = f'[{color}]You played:  {note_played}  [/]'
+    if note_choice not in notes:
+        # it means note_choice is 'Good job!' when the player hits the note
+        play_note_row = note_choice
+    else:
+        play_note_row = f'Play this note: [blue bold]{note_choice}[/]'
+    note_played_row = f'You played: [{color} bold]{note_played}[/]'
 
-    current_score_text = Text(f'\nCurrent score: {score}')
-    current_score_text.stylize('yellow', 16)
+    all_notes_row = Text.assemble(
+        ('\nAll available notes: ', 'grey53 bold'),
+        ((', ').join(notes), 'grey53')
+    )
+
+    current_score_text = Text(f'\nCurrent score: {score}\n')
+    current_score_text.stylize('yellow bold', 16)
+
+    quit_text = Text('\n\n(press cmd+C to quit at any time)')
+    quit_text.stylize('grey37')
 
     panel_group = RenderGroup(
         current_score_text,
-        Panel(row1),
-        Panel(row2)
+        Panel(play_note_row),
+        Panel(note_played_row),
+        all_notes_row,
+        quit_text
     )
 
     return Panel(panel_group, title='FRETBOARD LEARNER', box=box.ASCII)
@@ -166,21 +167,27 @@ def choose(choices, choice_name='choices'):
 
     console.clear()
 
-    choices_str = Text.assemble(
-        (f'Please select from the available {choice_name}:\n', 'bold blue'),
-        '- ' + ("\n- ").join(choices)
-    )
-    console.print(Panel(choices_str))
+    choices_str = Text(f'Please select from the available {choice_name}:\n\n', 'bold blue')
+
+    for i, choice in enumerate(choices):
+
+        num = Text(str(i + 1), 'green')
+        choices_str.append(Text('  [', 'white'))
+        choices_str.append(num)
+        choices_str.append(Text(']', 'white'))
+        choices_str.append(Text(f'\t{choice}\n', 'white'))
+
+    print(Panel(choices_str))
 
     inp = Prompt.ask(
-        f'Choose from the {choice_name}',
-        choices=choices + [x.lower() for x in choices] + [x.title() for x in choices],
-        default=choices[0],
+        f'Choose from the {choice_name} (enter one of the numbers)',
+        choices=[str(i) for i in range(1, len(choices) + 1)],
+        default=1,
         show_choices=False,
         show_default=False
     )
 
-    return inp
+    return choices[int(inp) - 1]
 
 if __name__ == "__main__":
     main()
