@@ -45,7 +45,7 @@ console = Console() # defining Rich console
 def main():
 
     console.clear()
-    text = Text('\nFRETBOARD LEARNER\n(press cmd+C to quit at any time)\n', justify='center')
+    text = Text('\nFRETBOARD LEARNER\n(press ctrl+C to quit at any time)\n', justify='center')
     text.stylize('bold blue', 0, 18)
     text.stylize('grey37', 18)
     console.print(Panel(text), justify='center')
@@ -140,7 +140,7 @@ def generate_panel(notes, note_choice, note_played, color, score):
     current_score_text = Text(f'\nCurrent score: {score}\n')
     current_score_text.stylize('yellow bold', 16)
 
-    quit_text = Text('\n\n(press cmd+C to quit at any time)')
+    quit_text = Text('\n\n(press ctrl+C to quit at any time)')
     quit_text.stylize('grey37')
 
     panel_group = RenderGroup(
