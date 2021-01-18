@@ -153,7 +153,7 @@ def generate_panel(notes, note_choice, note_played, color, score):
    
 def detect_note():
 
-    stream = sd.Stream(channels=1, blocksize=1024)
+    stream = sd.Stream(channels=1, blocksize=1024, samplerate=RATE)
     stream.start()
     notes_list = []
 
