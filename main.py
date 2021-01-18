@@ -12,7 +12,7 @@ from rich.prompt import Prompt
 from rich.console import Console
 from rich import box, print
 from helpers import pitch2note, NOTES_PER_STRING
-from objects import SCALES, NOTE_NAMES, Scale
+import objects
 
 # Set up constants for audio input & pitch detection
 RATE = 44100
@@ -37,6 +37,9 @@ console = Console() # defining Rich console
 - implement the groups from here: https://medium.com/@aslushnikov/memorizing-fretboard-a9f4f28dbf03
     (eg. lvl 1, only E string, lvl 2, those group notes, etc.)
 - Select notes from multiple string (and maybe identify what is the string that is playing)
+- intervals, eg. play the perfect fourth of C
+- triads, play notes after each other, eg play a C triad - C D E
+- chords, play notes after each other
 '''
 
 def main():
@@ -70,10 +73,10 @@ def mode_2_scale_notes():
 
     console.print('\nYou need to select a key and a scale type')
 
-    scale_key = choose(NOTE_NAMES, choice_name='keys')
-    scale_type = choose(list(SCALES.keys()), choice_name='scales')
+    scale_key = choose(objects.NOTE_NAMES, choice_name='keys')
+    scale_type = choose(list(objects.SCALES.keys()), choice_name='scales')
 
-    scale = Scale(scale_type, scale_key, add_root_as_last=False)
+    scale = objects.Scale(scale_type, scale_key, add_root_as_last=False)
     notes = scale.notes
 
     play_mode(notes)
