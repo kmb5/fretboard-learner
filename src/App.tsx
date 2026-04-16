@@ -1,7 +1,16 @@
+import { GameSessionProvider, useGameSession } from './game/GameSessionProvider'
+import ModeSelector from './ui/ModeSelector'
+import GameScreen from './ui/GameScreen'
+
+function AppRoutes() {
+  const { state } = useGameSession()
+  return state.status === 'idle' ? <ModeSelector /> : <GameScreen />
+}
+
 export default function App() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
-      <h1 className="text-3xl font-bold tracking-wide">Fretboard Learner</h1>
-    </div>
+    <GameSessionProvider>
+      <AppRoutes />
+    </GameSessionProvider>
   )
 }
