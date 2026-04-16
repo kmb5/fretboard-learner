@@ -57,13 +57,13 @@ A Husky pre-commit hook runs `lint-staged`, which lints staged `.ts`/`.tsx` file
 
 ## Open issues
 
-| # | Slice | Blocked by |
-|---|-------|------------|
-| [#3](https://github.com/kmb5/fretboard-learner/issues/3) | MusicTheory module | — |
-| [#4](https://github.com/kmb5/fretboard-learner/issues/4) | PitchDetector module | — |
-| [#5](https://github.com/kmb5/fretboard-learner/issues/5) | FretboardSVG component | — |
-| [#6](https://github.com/kmb5/fretboard-learner/issues/6) | GameMode + GameSession reducer | #3 |
-| [#7](https://github.com/kmb5/fretboard-learner/issues/7) | ModeSelector UI | #5, #6 |
-| [#8](https://github.com/kmb5/fretboard-learner/issues/8) | GameScreen + full Random String integration | #4, #7 |
-| [#9](https://github.com/kmb5/fretboard-learner/issues/9) | Scale mode | #8 |
-| [#10](https://github.com/kmb5/fretboard-learner/issues/10) | Mobile / portrait support | #8 |
+| # | Slice | Status | Blocked by |
+|---|-------|--------|------------|
+| [#3](https://github.com/kmb5/fretboard-learner/issues/3) | MusicTheory module | ✅ closed (commit `053cf1d`) | — |
+| [#4](https://github.com/kmb5/fretboard-learner/issues/4) | PitchDetector module | ✅ closed (PR #11, commit `7ac2fab`) | — |
+| [#5](https://github.com/kmb5/fretboard-learner/issues/5) | FretboardSVG component | 🔁 PR #12 open | — |
+| [#6](https://github.com/kmb5/fretboard-learner/issues/6) | GameMode + GameSession reducer | open | — |
+| [#7](https://github.com/kmb5/fretboard-learner/issues/7) | ModeSelector UI | open | #5, #6 |
+| [#8](https://github.com/kmb5/fretboard-learner/issues/8) | GameScreen + full Random String integration | open | #4, #7 |
+| [#9](https://github.com/kmb5/fretboard-learner/issues/9) | Scale mode | open | #8 |
+| [#10](https://github.com/kmb5/fretboard-learner/issues/10) | Mobile / portrait support | open | #8 |
