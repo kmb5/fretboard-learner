@@ -43,6 +43,20 @@ const NECK_MID_Y = (NECK_TOP + NECK_BOTTOM) / 2
 /** Low-to-high ordering; rendered top-to-bottom in the SVG. */
 const STRINGS: StringName[] = ['E', 'A', 'D', 'G', 'B', 'e']
 
+/** Pre-computed Y coordinate for each string — avoids repeated indexOf scans. */
+const STRING_Y: Record<StringName, number> = Object.fromEntries(
+  STRINGS.map((name, i) => [name, NECK_TOP + i * STRING_SPACING]),
+) as Record<StringName, number>
+
+/**
+ * How far to the left of the nut the open-string dot sits.
+ * Named so the intent is clear and it stays in sync with the fret-0 label.
+ */
+const OPEN_STRING_DOT_OFFSET = 18
+
+/** Indices 0–12 used for both fret lines and fret-number labels. */
+const FRET_INDICES = Array.from({ length: FRET_COUNT + 1 }, (_, i) => i)
+
 /** Frets with a single dot inlay. */
 const DOT_FRETS = [3, 5, 7, 9]
 
@@ -71,7 +85,7 @@ const HIGHLIGHT_FILL: Record<HighlightSpec['color'], string> = {
 // ---------------------------------------------------------------------------
 
 function getStringY(name: StringName): number {
-  return NECK_TOP + STRINGS.indexOf(name) * STRING_SPACING
+  return STRING_Y[name]
 }
 
 /** X of fret line n: 0 = nut, 1–12 = fret lines. */
@@ -85,7 +99,7 @@ function getFretLineX(n: number): number {
  * between adjacent fret lines.
  */
 function getDotX(fret: number): number {
-  if (fret === 0) return NUT_X - 18
+  if (fret === 0) return NUT_X - OPEN_STRING_DOT_OFFSET
   return NUT_X + (fret - 0.5) * FRET_SPACING
 }
 
@@ -127,7 +141,7 @@ export default function FretboardSVG({ highlights = [] }: Props) {
         ))}
 
         {/* Nut and fret lines (13 total: fret-line-0 through fret-line-12) */}
-        {Array.from({ length: FRET_COUNT + 1 }, (_, i) => i).map((fret) => (
+        {FRET_INDICES.map((fret) => (
           <line
             key={fret}
             data-testid={`fret-line-${fret}`}
@@ -163,6 +177,7 @@ export default function FretboardSVG({ highlights = [] }: Props) {
           opacity={0.45}
         />
         <circle
+          data-testid={`inlay-${DOUBLE_DOT_FRET}-b`}
           cx={getDotX(DOUBLE_DOT_FRET)}
           cy={NECK_MID_Y + STRING_SPACING * 1.5}
           r={6}
@@ -187,7 +202,7 @@ export default function FretboardSVG({ highlights = [] }: Props) {
         ))}
 
         {/* Fret number labels (below the board) */}
-        {Array.from({ length: FRET_COUNT + 1 }, (_, i) => i).map((fret) => (
+        {FRET_INDICES.map((fret) => (
           <text
             key={`fret-num-${fret}`}
             x={getDotX(fret)}
@@ -207,6 +222,7 @@ export default function FretboardSVG({ highlights = [] }: Props) {
             key={`highlight-${position.string}-${position.fret}`}
             data-testid={`highlight-${position.string}-${position.fret}`}
             data-color={color}
+            aria-label={`${position.string} string, fret ${position.fret}`}
             cx={getDotX(position.fret)}
             cy={getStringY(position.string)}
             r={10}

@@ -34,6 +34,13 @@ describe('FretboardSVG — static structure', () => {
     }
   })
 
+  it('renders two circles for the double dot inlay at fret 12', () => {
+    const { container } = render(<FretboardSVG />)
+    expect(
+      container.querySelectorAll('[data-testid^="inlay-12"]'),
+    ).toHaveLength(2)
+  })
+
   it('renders 6 string line elements', () => {
     const { container } = render(<FretboardSVG />)
     expect(
