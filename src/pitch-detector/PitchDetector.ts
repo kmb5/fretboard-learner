@@ -137,6 +137,7 @@ export class WebAudioSource implements AudioSource {
   async start(
     onFrame: (samples: Float32Array, sampleRate: number) => void,
   ): Promise<void> {
+    if (this.running) this.stop()
     this.stream = await navigator.mediaDevices.getUserMedia({
       audio: true,
       video: false,
