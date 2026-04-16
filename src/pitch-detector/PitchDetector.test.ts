@@ -83,6 +83,10 @@ describe('getMostFrequent', () => {
     const result = getMostFrequent(['A', 'E'])
     expect(['A', 'E']).toContain(result)
   })
+
+  it('throws when called with an empty array', () => {
+    expect(() => getMostFrequent([])).toThrow('getMostFrequent called with empty array')
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -221,6 +225,26 @@ describe('WebAudioPitchDetector', () => {
     for (let i = 0; i < FRAME_WINDOW; i++) mockSource.pushFrame(A4_FRAME)
 
     expect(cb).toHaveBeenCalledWith('A')
+  })
+
+  it('calling start() twice discards any partial window from the first call', async () => {
+    const cb = vi.fn()
+    detector.onNote(cb)
+    await detector.start()
+
+    // Accumulate 9 frames — one short of triggering
+    for (let i = 0; i < FRAME_WINDOW - 1; i++) mockSource.pushFrame(A4_FRAME)
+
+    // Second start() must reset the window
+    await detector.start()
+
+    // Those 9 frames should be gone — 1 new frame is not enough
+    mockSource.pushFrame(A4_FRAME)
+    expect(cb).not.toHaveBeenCalled()
+
+    // Complete a full fresh window
+    for (let i = 0; i < FRAME_WINDOW - 1; i++) mockSource.pushFrame(A4_FRAME)
+    expect(cb).toHaveBeenCalledTimes(1)
   })
 
   it('replaces the callback when onNote is called again', async () => {

@@ -50,6 +50,7 @@ export interface PitchDetector {
 
 /** Returns the most frequently occurring string in `items`. */
 export function getMostFrequent(items: string[]): string {
+  if (items.length === 0) throw new Error('getMostFrequent called with empty array')
   const counts = new Map<string, number>()
   for (const item of items) {
     counts.set(item, (counts.get(item) ?? 0) + 1)
@@ -91,6 +92,7 @@ export class WebAudioPitchDetector implements PitchDetector {
   }
 
   async start(): Promise<void> {
+    this.window = []
     await this.audioSource.start((samples, sampleRate) => {
       // Lazily create the Pitchy detector on the first frame so it matches
       // the actual buffer size used by the audio source.
@@ -145,6 +147,7 @@ export class WebAudioSource implements AudioSource {
     analyser.fftSize = BUFFER_SIZE
     source.connect(analyser)
 
+    // buffer is reused across frames; onFrame must consume samples synchronously.
     const buffer = new Float32Array(analyser.fftSize)
     this.running = true
 
@@ -160,7 +163,7 @@ export class WebAudioSource implements AudioSource {
   stop(): void {
     this.running = false
     this.stream?.getTracks().forEach((t) => t.stop())
-    void this.context?.close()
+    this.context?.close().catch((e) => console.warn('AudioContext.close() failed', e))
     this.context = null
     this.stream = null
   }
