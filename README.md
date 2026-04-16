@@ -47,10 +47,16 @@ A pre-commit hook (Husky + lint-staged) runs ESLint automatically on staged `.ts
 
 ```
 src/
-  App.tsx              # Root component
-  index.css            # Global styles + Tailwind import
-  main.tsx             # Entry point
-  test/                # Test setup and app-level tests
+  App.tsx                   # Root component
+  index.css                 # Global styles + Tailwind import
+  main.tsx                  # Entry point
+  fretboard/
+    FretboardSVG.tsx        # Presentational SVG fretboard component
+  music-theory/
+    MusicTheory.ts          # Pure TS: notes, scales, fretboard positions
+  pitch-detector/
+    PitchDetector.ts        # Web Audio API + Pitchy pitch detection
+  test/                     # Test setup and app-level tests
 ```
 
-More modules will be added as implementation slices are completed. See [CLAUDE.md](./CLAUDE.md) for the full build plan.
+See [CLAUDE.md](./CLAUDE.md) for the full build plan and issue status.
