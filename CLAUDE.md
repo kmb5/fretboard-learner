@@ -39,13 +39,21 @@ Full PRD: [issue #1](https://github.com/kmb5/fretboard-learner/issues/1)
 
 State shape: `{ status: 'idle' | 'waiting' | 'correct' | 'wrong', currentNote, score, difficulty }`
 
+## Package manager
+
+This repo enforces **pnpm**. Always use `pnpm` — never `npm` or `yarn`. The `preinstall` script will reject other package managers.
+
 ## Build commands
 
 ```bash
+pnpm install    # install dependencies
 pnpm dev        # dev server
 pnpm build      # tsc + vite build
 pnpm test       # vitest run
+pnpm lint       # eslint across all TS/TSX files
 ```
+
+A Husky pre-commit hook runs `lint-staged`, which lints staged `.ts`/`.tsx` files before every commit.
 
 ## Open issues
 

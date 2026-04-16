@@ -13,7 +13,7 @@ A browser-based guitar fretboard memorization tool. The app renders a visual SVG
 ## Requirements
 
 - Node.js 18+
-- pnpm (`npm install -g pnpm`)
+- pnpm — this repo enforces pnpm as the package manager. Install it with `npm install -g pnpm` if you don't have it.
 
 ## Getting started
 
@@ -32,6 +32,9 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. Allow micro
 | `pnpm build` | Type-check and build for production |
 | `pnpm preview` | Preview the production build locally |
 | `pnpm test` | Run the test suite (Vitest) |
+| `pnpm lint` | Run ESLint across all TypeScript files |
+
+A pre-commit hook (Husky + lint-staged) runs ESLint automatically on staged `.ts`/`.tsx` files before every commit.
 
 ## Tech stack
 
