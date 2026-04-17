@@ -61,8 +61,8 @@ A Husky pre-commit hook runs `lint-staged`, which lints staged `.ts`/`.tsx` file
 |---|-------|--------|------------|
 | [#3](https://github.com/kmb5/fretboard-learner/issues/3) | MusicTheory module | ✅ closed (commit `053cf1d`) | — |
 | [#4](https://github.com/kmb5/fretboard-learner/issues/4) | PitchDetector module | ✅ closed (PR #11, commit `7ac2fab`) | — |
-| [#5](https://github.com/kmb5/fretboard-learner/issues/5) | FretboardSVG component | 🔁 PR #12 open | — |
-| [#6](https://github.com/kmb5/fretboard-learner/issues/6) | GameMode + GameSession reducer | open | — |
+| [#5](https://github.com/kmb5/fretboard-learner/issues/5) | FretboardSVG component | ✅ closed (PR #12, commit `68045f5`) | — |
+| [#6](https://github.com/kmb5/fretboard-learner/issues/6) | GameMode + GameSession reducer | 🔁 in progress | — |
 | [#7](https://github.com/kmb5/fretboard-learner/issues/7) | ModeSelector UI | open | #5, #6 |
 | [#8](https://github.com/kmb5/fretboard-learner/issues/8) | GameScreen + full Random String integration | open | #4, #7 |
 | [#9](https://github.com/kmb5/fretboard-learner/issues/9) | Scale mode | open | #8 |

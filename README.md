@@ -52,6 +52,9 @@ src/
   main.tsx                  # Entry point
   fretboard/
     FretboardSVG.tsx        # Presentational SVG fretboard component
+  game/
+    GameMode.ts             # GameMode interface + RandomStringMode
+    GameSession.tsx         # React context + useReducer session state
   music-theory/
     MusicTheory.ts          # Pure TS: notes, scales, fretboard positions
   pitch-detector/
