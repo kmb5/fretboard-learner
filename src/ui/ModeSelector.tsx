@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useGameSession } from '../game/GameSessionProvider'
 import { RandomStringMode } from '../game/GameMode'
 import type { Difficulty } from '../game/GameMode'
@@ -11,10 +11,10 @@ export default function ModeSelector() {
   const [selectedString, setSelectedString] = useState<StringName | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty>('learning')
 
-  function handleStart() {
+  const handleStart = useCallback(() => {
     if (selectedString === null) return
     startSession(new RandomStringMode(selectedString), difficulty)
-  }
+  }, [selectedString, difficulty, startSession])
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center p-8">
