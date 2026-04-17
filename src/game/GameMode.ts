@@ -38,7 +38,7 @@ export interface GameMode {
 export class RandomStringMode implements GameMode {
   private readonly string: StringName
   private readonly notePool: string[]
-  private currentNote: string
+  private currentNote = ''
 
   constructor(string: StringName) {
     this.string = string
@@ -51,7 +51,6 @@ export class RandomStringMode implements GameMode {
         seen.add(n)
         return true
       })
-    this.currentNote = this.pickRandom()
   }
 
   getNextNote(): string {

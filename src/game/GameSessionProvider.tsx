@@ -52,7 +52,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
     const isCorrect = mode.isValidAnswer(note)
     dispatch({ type: 'NOTE_DETECTED', isCorrect })
 
-    if (isCorrect) {
+    if (isCorrect && advanceTimerRef.current === null) {
       advanceTimerRef.current = setTimeout(() => {
         advanceTimerRef.current = null
         dispatch({ type: 'ADVANCE', nextNote: mode.getNextNote() })
