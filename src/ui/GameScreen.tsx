@@ -100,6 +100,14 @@ export default function GameScreen() {
     }
   }, [noteDetected, micInitKey])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') quit()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [quit])
+
   const handleRetry = () => {
     setMicError(null)
     setMicInitKey((k) => k + 1)
@@ -124,7 +132,7 @@ export default function GameScreen() {
         className="flex items-center justify-between px-8 pt-6 pb-4"
         style={{ borderBottom: '1px solid var(--border)' }}
       >
-        <AppHeader />
+        <AppHeader showSettings={false} />
         <p
           style={{
             fontFamily: "'Fira Code', monospace",
