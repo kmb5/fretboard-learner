@@ -4,25 +4,24 @@
 
 Fretboard Learner is a React/TypeScript web application that helps guitarists memorize the fretboard. It renders a 2D SVG fretboard with a CSS 2.5D perspective transform, listens to the user's guitar through the microphone using the Web Audio API, and runs the user through note-identification exercises in the browser — no Python, no terminal, no system dependencies.
 
-This is a ground-up rewrite of a Python CLI prototype that used `aubio` and `rich`. The reference implementation lives in the Python files at the repo root and is the source of truth for music theory logic and pitch aggregation behaviour.
-
 ## PRD summary
 
 Full PRD: [issue #1](https://github.com/kmb5/fretboard-learner/issues/1)
 
-**Two game modes:**
-- *Random Notes on a String* — pick one of the 6 strings; the app gives you random notes on that string
-- *Random Notes in a Scale* — pick a root key and scale type; notes span the full neck
+**Three game modes:**
+- *Random Notes on a String* — pick one of the 6 strings (or all strings); the app gives you random notes on that string; supports a NoteFilter (`naturals` / `sharps` / `all`)
+- *Random Notes in a Scale* — pick a root key and scale type (7 scale types); notes span the full neck
+- *Chord Tones* — pick a root key and chord type (7 chord types); notes are drawn from that chord
 
 **Two difficulty levels:**
 - *Learning* — fretboard highlights all valid positions for the target note in amber
 - *Practice* — only the note name is shown; player must recall positions from memory
 
-**Feedback loop:** the app detects pitch in real time via the Web Audio API (Pitchy library, McLeod method, 10-frame aggregation window). Correct note → green flash + auto-advance after ~800 ms. Wrong note → red flash + stays on the same note until correct.
+**Feedback loop:** the app detects pitch in real time via the Web Audio API (Pitchy library, McLeod method, 10-frame aggregation window with amplitude gating). Correct note → green flash + auto-advance after 1100 ms. Wrong note → red flash + stays on the same note until correct.
 
 **Key constraints:**
 - Horizontal fretboard, frets 0–12, landscape-only on mobile
-- Note matching strips octave (matches `"F#"` not `"F#3"`)
+- Note matching strips octave and normalises to canonical sharp form (e.g. `"Db"` → `"C#"`)
 - Mic access requested lazily on session start, not on page load
 - No backend, no persistence, no accounts
 
@@ -30,14 +29,18 @@ Full PRD: [issue #1](https://github.com/kmb5/fretboard-learner/issues/1)
 
 | Module | Role |
 |--------|------|
-| `MusicTheory` | Pure TS port of `objects.py`/`helpers.py`. All note/scale/position data |
-| `PitchDetector` | Web Audio API + Pitchy. Injectable source for testing |
-| `FretboardSVG` | Presentational SVG component. Receives `highlights` prop |
-| `GameMode` | Interface + `RandomStringMode` / `ScaleMode` implementations |
-| `GameSession` | React Context + useReducer. Owns all session state |
-| UI components | `ModeSelector`, `GameScreen`, `MicPermissionPrompt`, `PortraitOverlay` |
+| `MusicTheory` | Pure TS note/scale/chord/position data. Enharmonic helpers (`toCanonicalSharp`, `SHARP_TO_FLAT`, `FLAT_PREFERRED_ROOTS`) |
+| `PitchDetector` | Web Audio API + Pitchy. 10-frame window, clarity ≥ 0.9, amplitude gate, guitar range 70–1400 Hz. Injectable `AudioSource` for testing |
+| `FretboardSVG` | Presentational SVG component. `highlights` prop drives amber/green/red positions. `isLeftHanded` prop flips string order |
+| `GameMode` | Interface + `RandomStringMode` / `ScaleMode` / `ChordTonesMode` implementations. All registered in `GAME_MODE_ENTRIES` |
+| `GameSession` | Pure reducer (`GameSession.ts`) + `GameSessionProvider` context. Owns all session state and the advance timer |
+| `useTheme` | Dark/light theme toggle. Writes `data-theme` to `<html>`, persists to localStorage |
+| `usePreferences` | Handedness toggle (`isLeftHanded`). localStorage + custom event dispatch for cross-component sync |
+| UI components | `ModeSelector`, `GameScreen`, `AppHeader`, `SettingsModal`, `MicPermissionPrompt`, `PortraitOverlay` |
 
 State shape: `{ status: 'idle' | 'waiting' | 'correct' | 'wrong', currentNote, score, difficulty }`
+
+CSS theme system uses vars (`--bg`, `--fg`, `--fg-2`, `--fg-3`, `--border`, `--amber-hl`, `--green`, `--red`, `--amber`) driven by `data-theme` on `documentElement`.
 
 ## Package manager
 
@@ -55,15 +58,25 @@ pnpm lint       # eslint across all TS/TSX files
 
 A Husky pre-commit hook runs `lint-staged`, which lints staged `.ts`/`.tsx` files before every commit.
 
-## Open issues
+## Deployment
 
-| # | Slice | Status | Blocked by |
-|---|-------|--------|------------|
-| [#3](https://github.com/kmb5/fretboard-learner/issues/3) | MusicTheory module | ✅ closed (commit `053cf1d`) | — |
-| [#4](https://github.com/kmb5/fretboard-learner/issues/4) | PitchDetector module | ✅ closed (PR #11, commit `7ac2fab`) | — |
-| [#5](https://github.com/kmb5/fretboard-learner/issues/5) | FretboardSVG component | ✅ closed (PR #12, commit `68045f5`) | — |
-| [#6](https://github.com/kmb5/fretboard-learner/issues/6) | GameMode + GameSession reducer | 🔁 in progress | — |
-| [#7](https://github.com/kmb5/fretboard-learner/issues/7) | ModeSelector UI | open | #5, #6 |
-| [#8](https://github.com/kmb5/fretboard-learner/issues/8) | GameScreen + full Random String integration | open | #4, #7 |
-| [#9](https://github.com/kmb5/fretboard-learner/issues/9) | Scale mode | open | #8 |
-| [#10](https://github.com/kmb5/fretboard-learner/issues/10) | Mobile / portrait support | open | #8 |
+CI/CD via GitHub Actions (`.github/workflows/deploy.yml`). On every push to `master`:
+1. `pnpm lint` → `pnpm test` → `pnpm build` (must all pass)
+2. Built `dist/` is deployed to GitHub Pages at `https://kmb5.github.io/fretboard-learner/`
+
+`vite.config.ts` sets `base: '/fretboard-learner/'` automatically when `GITHUB_ACTIONS=true`. PRs run lint + test but do not deploy.
+
+## Issues
+
+All original implementation slices are complete.
+
+| # | Slice | Status |
+|---|-------|--------|
+| [#3](https://github.com/kmb5/fretboard-learner/issues/3) | MusicTheory module | ✅ closed |
+| [#4](https://github.com/kmb5/fretboard-learner/issues/4) | PitchDetector module | ✅ closed |
+| [#5](https://github.com/kmb5/fretboard-learner/issues/5) | FretboardSVG component | ✅ closed |
+| [#6](https://github.com/kmb5/fretboard-learner/issues/6) | GameMode + GameSession reducer | ✅ closed |
+| [#7](https://github.com/kmb5/fretboard-learner/issues/7) | ModeSelector UI | ✅ closed |
+| [#8](https://github.com/kmb5/fretboard-learner/issues/8) | GameScreen + Random String integration | ✅ closed |
+| [#9](https://github.com/kmb5/fretboard-learner/issues/9) | Scale mode | ✅ closed |
+| [#10](https://github.com/kmb5/fretboard-learner/issues/10) | Mobile / portrait support | ✅ closed |
