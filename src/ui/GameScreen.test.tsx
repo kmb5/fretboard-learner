@@ -60,7 +60,7 @@ describe('GameScreen — static structure', () => {
     await navigateToGameScreen()
     expect(screen.getByTestId('current-note').textContent).toMatch(/^[A-G][♯♭]?$/)
     expect(screen.getByTestId('heard-note').textContent).toBe('—')
-    expect(screen.getByText(/^Score:/)).toBeInTheDocument()
+    expect(screen.getByTestId('score').textContent).toMatch(/^Score:/)
     expect(screen.getByRole('button', { name: /quit/i })).toBeInTheDocument()
   })
 
@@ -158,7 +158,7 @@ describe('GameScreen — correct note', () => {
     await navigateToGameScreen()
     const target = screen.getByTestId('current-note').textContent!
     await act(async () => { capturedOnNote?.(target) })
-    expect(screen.getByText(/Score:\s*1/)).toBeInTheDocument()
+    expect(screen.getByTestId('score').textContent).toMatch(/Score:\s*1/)
   })
 
   it('shows green highlights on correct', async () => {
@@ -178,7 +178,7 @@ describe('GameScreen — wrong note', () => {
     // is guaranteed to differ from any possible target note.
     const wrongNote = target === 'A' ? 'B' : 'A'
     await act(async () => { capturedOnNote?.(wrongNote) })
-    expect(screen.getByText(/Score:\s*0/)).toBeInTheDocument()
+    expect(screen.getByTestId('score').textContent).toMatch(/Score:\s*0/)
   })
 })
 

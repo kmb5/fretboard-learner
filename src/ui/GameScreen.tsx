@@ -134,6 +134,7 @@ export default function GameScreen() {
       >
         <AppHeader showSettings={false} />
         <p
+          data-testid="score"
           style={{
             fontFamily: "'Fira Code', monospace",
             fontSize: '0.75rem',
