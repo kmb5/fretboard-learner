@@ -7,6 +7,7 @@ export interface HighlightSpec {
 
 interface Props {
   highlights?: HighlightSpec[]
+  isLeftHanded?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -65,19 +66,19 @@ const DOUBLE_DOT_FRET = 12
 
 /** Visual string thickness, thickest at the top (low E). */
 const STRING_WIDTHS: Record<StringName, number> = {
-  E: 2.4,
-  A: 2.0,
-  D: 1.7,
-  G: 1.4,
-  B: 1.1,
-  e: 0.9,
+  E: 2.2,
+  A: 1.85,
+  D: 1.55,
+  G: 1.3,
+  B: 1.05,
+  e: 0.85,
 }
 
-/** CSS fill colour for each highlight type. */
+/** Design-system fill colours for each highlight state. */
 const HIGHLIGHT_FILL: Record<HighlightSpec['color'], string> = {
-  amber: '#f59e0b',
-  green: '#22c55e',
-  red: '#ef4444',
+  amber: 'var(--amber)',
+  green: 'var(--green)',
+  red:   'var(--red)',
 }
 
 // ---------------------------------------------------------------------------
@@ -107,130 +108,186 @@ function getDotX(fret: number): number {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function FretboardSVG({ highlights = [] }: Props) {
+export default function FretboardSVG({ highlights = [], isLeftHanded = false }: Props) {
   return (
-    <div style={{ perspective: '800px', width: '100%' }}>
-      <svg
-        role="img"
-        viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-        width="100%"
-        style={{ display: 'block', transform: 'rotateX(12deg)', transformOrigin: 'top center' }}
-        aria-label="Guitar fretboard"
-      >
-        {/* Neck background */}
-        <rect
-          x={NUT_X}
-          y={NECK_TOP}
-          width={NECK_RIGHT - NUT_X}
-          height={NECK_BOTTOM - NECK_TOP}
-          fill="#c8a96e"
-          rx={3}
-        />
+    <div className="fretboard-frame">
+      <div style={{ perspective: '800px', width: '100%' }}>
+        <svg
+          role="img"
+          viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+          width="100%"
+          style={{ display: 'block', transform: 'rotateX(12deg)', transformOrigin: 'top center' }}
+          aria-label="Guitar fretboard"
+        >
+          <defs>
+            {/* Neck background: dark warm gradient, lighter towards centre */}
+            <linearGradient id="neck-bg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   style={{ stopColor: 'var(--neck-start)' }} />
+              <stop offset="48%"  style={{ stopColor: 'var(--neck-mid)' }} />
+              <stop offset="100%" style={{ stopColor: 'var(--neck-end)' }} />
+            </linearGradient>
 
-        {/* Six string lines */}
-        {STRINGS.map((name) => (
+            {/* Glow effect for highlight dots */}
+            <filter id="dot-glow" x="-70%" y="-70%" width="240%" height="240%">
+              <feGaussianBlur stdDeviation="4.5" in="SourceGraphic" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          <g transform={isLeftHanded ? `translate(${SVG_W}, 0) scale(-1, 1)` : undefined}>
+
+          {/* ── Neck background ─────────────────────────────────────── */}
+          <rect
+            x={NUT_X}
+            y={NECK_TOP}
+            width={NECK_RIGHT - NUT_X}
+            height={NECK_BOTTOM - NECK_TOP}
+            fill="url(#neck-bg)"
+            rx={2}
+          />
+
+          {/* Top-edge warmth line */}
           <line
-            key={name}
-            data-testid={`string-${name}`}
-            x1={NUT_X}
-            y1={getStringY(name)}
-            x2={NECK_RIGHT}
-            y2={getStringY(name)}
-            stroke="#888"
-            strokeWidth={STRING_WIDTHS[name]}
+            x1={NUT_X} y1={NECK_TOP}
+            x2={NECK_RIGHT} y2={NECK_TOP}
+            stroke="rgba(255,200,120,0.12)"
+            strokeWidth={1}
           />
-        ))}
 
-        {/* Nut and fret lines (13 total: fret-line-0 through fret-line-12) */}
-        {FRET_INDICES.map((fret) => (
-          <line
-            key={fret}
-            data-testid={`fret-line-${fret}`}
-            x1={getFretLineX(fret)}
-            y1={NECK_TOP}
-            x2={getFretLineX(fret)}
-            y2={NECK_BOTTOM}
-            stroke={fret === 0 ? '#f0ece0' : '#b0a090'}
-            strokeWidth={fret === 0 ? 5 : 1.5}
-          />
-        ))}
+          {/* ── Fret lines + nut ────────────────────────────────────── */}
+          {FRET_INDICES.map((fret) => (
+            <line
+              key={fret}
+              data-testid={`fret-line-${fret}`}
+              x1={getFretLineX(fret)}
+              y1={NECK_TOP}
+              x2={getFretLineX(fret)}
+              y2={NECK_BOTTOM}
+              stroke={fret === 0 ? 'var(--nut-color)' : 'var(--fret-color)'}
+              strokeWidth={fret === 0 ? 4 : 1.5}
+            />
+          ))}
 
-        {/* Standard single dot inlays */}
-        {DOT_FRETS.map((fret) => (
+          {/* ── Six strings ─────────────────────────────────────────── */}
+          {STRINGS.map((name) => (
+            <line
+              key={name}
+              data-testid={`string-${name}`}
+              x1={NUT_X}
+              y1={getStringY(name)}
+              x2={NECK_RIGHT}
+              y2={getStringY(name)}
+              stroke="var(--string-color)"
+              strokeWidth={STRING_WIDTHS[name]}
+            />
+          ))}
+
+          {/* ── Inlay dots ──────────────────────────────────────────── */}
+          {DOT_FRETS.map((fret) => (
+            <circle
+              key={`inlay-${fret}`}
+              data-testid={`inlay-${fret}`}
+              cx={getDotX(fret)}
+              cy={NECK_MID_Y}
+              r={5}
+              style={{ fill: 'var(--dot-color)' }}
+            />
+          ))}
+
+          {/* Double-dot inlay at fret 12 */}
           <circle
-            key={`inlay-${fret}`}
-            data-testid={`inlay-${fret}`}
-            cx={getDotX(fret)}
-            cy={NECK_MID_Y}
-            r={6}
-            fill="#8b6914"
-            opacity={0.45}
+            data-testid={`inlay-${DOUBLE_DOT_FRET}`}
+            cx={getDotX(DOUBLE_DOT_FRET)}
+            cy={NECK_MID_Y - STRING_SPACING * 1.5}
+            r={5}
+            style={{ fill: 'var(--dot-color)' }}
           />
-        ))}
-
-        {/* Double dot inlay at fret 12 */}
-        <circle
-          data-testid={`inlay-${DOUBLE_DOT_FRET}`}
-          cx={getDotX(DOUBLE_DOT_FRET)}
-          cy={NECK_MID_Y - STRING_SPACING * 1.5}
-          r={6}
-          fill="#8b6914"
-          opacity={0.45}
-        />
-        <circle
-          data-testid={`inlay-${DOUBLE_DOT_FRET}-b`}
-          cx={getDotX(DOUBLE_DOT_FRET)}
-          cy={NECK_MID_Y + STRING_SPACING * 1.5}
-          r={6}
-          fill="#8b6914"
-          opacity={0.45}
-        />
-
-        {/* String name labels (headstock end) */}
-        {STRINGS.map((name) => (
-          <text
-            key={`label-${name}`}
-            x={STRING_LABEL_X}
-            y={getStringY(name)}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fill="#e5e7eb"
-            fontSize={14}
-            fontFamily="monospace"
-          >
-            {name}
-          </text>
-        ))}
-
-        {/* Fret number labels (below the board) */}
-        {FRET_INDICES.map((fret) => (
-          <text
-            key={`fret-num-${fret}`}
-            x={getDotX(fret)}
-            y={FRET_LABEL_Y}
-            textAnchor="middle"
-            fill="#9ca3af"
-            fontSize={11}
-            fontFamily="monospace"
-          >
-            {fret}
-          </text>
-        ))}
-
-        {/* Highlight dots */}
-        {highlights.map(({ position, color }) => (
           <circle
-            key={`highlight-${position.string}-${position.fret}`}
-            data-testid={`highlight-${position.string}-${position.fret}`}
-            data-color={color}
-            aria-label={`${position.string} string, fret ${position.fret}`}
-            cx={getDotX(position.fret)}
-            cy={getStringY(position.string)}
-            r={10}
-            fill={HIGHLIGHT_FILL[color]}
+            data-testid={`inlay-${DOUBLE_DOT_FRET}-b`}
+            cx={getDotX(DOUBLE_DOT_FRET)}
+            cy={NECK_MID_Y + STRING_SPACING * 1.5}
+            r={5}
+            style={{ fill: 'var(--dot-color)' }}
           />
-        ))}
-      </svg>
+
+          {/* ── String name labels (headstock end) ──────────────────── */}
+          {STRINGS.map((name) => (
+            <g
+              key={`label-${name}`}
+              transform={isLeftHanded
+                ? `translate(${2 * STRING_LABEL_X}, 0) scale(-1, 1)`
+                : undefined}
+            >
+              <text
+                x={STRING_LABEL_X}
+                y={getStringY(name)}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill="var(--string-color)"
+                fontSize={13}
+                fontFamily="'Fira Code', monospace"
+              >
+                {name}
+              </text>
+            </g>
+          ))}
+
+          {/* ── Fret number labels (below the board) ────────────────── */}
+          {FRET_INDICES.map((fret) => (
+            <g
+              key={`fret-num-${fret}`}
+              transform={isLeftHanded
+                ? `translate(${2 * getDotX(fret)}, 0) scale(-1, 1)`
+                : undefined}
+            >
+              <text
+                x={getDotX(fret)}
+                y={FRET_LABEL_Y}
+                textAnchor="middle"
+                fill="var(--fret-num-color)"
+                fontSize={10}
+                fontFamily="'Fira Code', monospace"
+              >
+                {fret}
+              </text>
+            </g>
+          ))}
+
+          {/* ── Highlight dots (with glow) ───────────────────────────── */}
+          {highlights.map(({ position, color }) => (
+            <g
+              key={`highlight-${position.string}-${position.fret}`}
+              filter="url(#dot-glow)"
+            >
+              {/* Outer ring */}
+              <circle
+                cx={getDotX(position.fret)}
+                cy={getStringY(position.string)}
+                r={14}
+                fill="none"
+                stroke={HIGHLIGHT_FILL[color]}
+                strokeWidth={1.5}
+                opacity={0.45}
+              />
+              {/* Filled dot */}
+              <circle
+                data-testid={`highlight-${position.string}-${position.fret}`}
+                data-color={color}
+                aria-label={`${position.string} string, fret ${position.fret}`}
+                cx={getDotX(position.fret)}
+                cy={getStringY(position.string)}
+                r={9}
+                fill={HIGHLIGHT_FILL[color]}
+              />
+            </g>
+          ))}
+
+          </g>
+        </svg>
+      </div>
     </div>
   )
 }

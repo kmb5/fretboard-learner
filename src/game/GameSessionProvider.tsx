@@ -43,7 +43,7 @@ export function GameSessionProvider({ children }: { children: ReactNode }) {
       advanceTimerRef.current = null
     }
     modeRef.current = mode
-    dispatch({ type: 'START_SESSION', firstNote: mode.getNextNote(), difficulty })
+    dispatch({ type: 'START_SESSION', firstNote: mode.getNextNote(), difficulty, stringFilter: mode.getStringFilter() })
   }, [])
 
   const noteDetected = useCallback((note: string) => {

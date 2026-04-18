@@ -7,20 +7,36 @@ interface Props {
 
 export default function MicPermissionPrompt({ errorMessage, onRetry }: Props) {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center gap-6 p-8">
+    <div
+      className="min-h-screen flex flex-col items-center justify-center gap-6 p-8"
+      style={{ backgroundColor: 'var(--bg)', color: 'var(--fg)' }}
+    >
       <AppHeader />
 
-      <div className="text-center max-w-sm">
-        <p className="text-zinc-300 mb-2">{errorMessage}</p>
-        <p className="text-zinc-500 text-sm">
+      <div className="text-center" style={{ maxWidth: '22rem' }}>
+        <p
+          style={{
+            fontFamily: "'Fira Code', monospace",
+            fontSize: '0.9375rem',
+            color: 'var(--fg-2)',
+            marginBottom: '8px',
+          }}
+        >
+          {errorMessage}
+        </p>
+        <p
+          style={{
+            fontFamily: "'Fira Code', monospace",
+            fontSize: '0.8125rem',
+            color: 'var(--fg-3)',
+            margin: 0,
+          }}
+        >
           Check your browser settings, then try again.
         </p>
       </div>
 
-      <button
-        onClick={onRetry}
-        className="px-6 py-2 rounded-lg bg-amber-500 text-zinc-950 font-semibold hover:bg-amber-400 transition-colors"
-      >
+      <button onClick={onRetry} className="btn-retry">
         Retry
       </button>
     </div>

@@ -5,9 +5,11 @@ import type { Difficulty } from '../game/GameMode'
 import { createPitchDetector } from '../pitch-detector/PitchDetector'
 import FretboardSVG from '../fretboard/FretboardSVG'
 import type { HighlightSpec } from '../fretboard/FretboardSVG'
-import { getAllPositionsForNote } from '../music-theory/MusicTheory'
+import { getAllPositionsForNote, toCanonicalSharp, formatNote } from '../music-theory/MusicTheory'
+import type { StringName } from '../music-theory/MusicTheory'
 import AppHeader from './AppHeader'
 import MicPermissionPrompt from './MicPermissionPrompt'
+import { usePreferences } from '../hooks/usePreferences'
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -20,25 +22,30 @@ export const SILENCE_RESET_MS = 2000
 // Helpers
 // ---------------------------------------------------------------------------
 
-const NOTE_COLOR_CLASS: Record<SessionStatus, string> = {
-  idle: 'text-amber-400', // defensive; GameScreen is never rendered in idle state
-  waiting: 'text-amber-400',
-  correct: 'text-green-400',
-  wrong: 'text-red-400',
+const NOTE_COLOR: Record<SessionStatus, string> = {
+  idle:    'var(--amber-hl)',
+  waiting: 'var(--amber-hl)',
+  correct: 'var(--green)',
+  wrong:   'var(--red)',
 }
+
 
 function computeHighlights(
   status: SessionStatus,
   difficulty: Difficulty,
   currentNote: string,
+  stringFilter: StringName | null,
 ): HighlightSpec[] {
   if (!currentNote) return []
-  const positions = getAllPositionsForNote(currentNote)
+  const allPositions = getAllPositionsForNote(toCanonicalSharp(currentNote))
+  const positions = stringFilter === null
+    ? allPositions
+    : allPositions.filter((p) => p.string === stringFilter)
 
   if (status === 'correct') {
     return positions.map((p) => ({ position: p, color: 'green' as const }))
   }
-  if (status === 'wrong') {
+  if (status === 'wrong' && difficulty === 'learning') {
     return positions.map((p) => ({ position: p, color: 'red' as const }))
   }
   if (status === 'waiting' && difficulty === 'learning') {
@@ -53,6 +60,7 @@ function computeHighlights(
 
 export default function GameScreen() {
   const { state, noteDetected, quit } = useGameSession()
+  const { isLeftHanded } = usePreferences()
 
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [heardNote, setHeardNote] = useState<string>('—')
@@ -98,8 +106,8 @@ export default function GameScreen() {
   }
 
   const highlights = useMemo(
-    () => computeHighlights(state.status, state.difficulty, state.currentNote),
-    [state.status, state.difficulty, state.currentNote],
+    () => computeHighlights(state.status, state.difficulty, state.currentNote, state.stringFilter),
+    [state.status, state.difficulty, state.currentNote, state.stringFilter],
   )
 
   if (micError !== null) {
@@ -107,34 +115,85 @@ export default function GameScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col gap-8 p-8">
-      <AppHeader />
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: 'var(--bg)', color: 'var(--fg)' }}
+    >
+      {/* Header bar */}
+      <header
+        className="flex items-center justify-between px-8 pt-6 pb-4"
+        style={{ borderBottom: '1px solid var(--border)' }}
+      >
+        <AppHeader />
+        <p
+          style={{
+            fontFamily: "'Fira Code', monospace",
+            fontSize: '0.75rem',
+            color: 'var(--fg-3)',
+            margin: 0,
+          }}
+        >
+          Score: {state.score}
+        </p>
+      </header>
 
-      <div className="w-full">
-        <FretboardSVG highlights={highlights} />
+      {/* Fretboard */}
+      <div className="px-6 pt-6">
+        <FretboardSVG highlights={highlights} isLeftHanded={isLeftHanded} />
       </div>
 
-      <div className="flex flex-col items-center gap-4">
+      {/* Note display + controls */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8 pb-10">
         <div className="text-center">
-          <p className="text-zinc-400 text-sm uppercase tracking-widest mb-2">Play this note</p>
-          <p
-            data-testid="current-note"
-            className={`text-7xl font-bold ${NOTE_COLOR_CLASS[state.status]}`}
-          >
-            {state.currentNote}
+          <p className="section-label" style={{ marginBottom: '20px' }}>
+            Play this note
           </p>
+          <div
+            className="note-aura"
+            data-status={state.status}
+          >
+            <p
+              key={state.status === 'correct' ? `${state.currentNote}-correct` : state.currentNote}
+              data-testid="current-note"
+              className={state.status === 'correct' ? 'anim-note-correct' : 'anim-note-advance'}
+              style={{
+                fontFamily: "'Bebas Neue', cursive",
+                fontSize: 'clamp(5.5rem, 16vw, 8rem)',
+                lineHeight: 1,
+                color: NOTE_COLOR[state.status],
+                transition: 'color 0.3s ease',
+                margin: 0,
+              }}
+            >
+              {(() => {
+                const formatted = formatNote(state.currentNote)
+                const accidental = formatted.slice(1)
+                return (
+                  <>
+                    {formatted[0]}
+                    {accidental && (
+                      <span style={{
+                        fontFamily: "'Fira Code', monospace",
+                        fontSize: '0.5em',
+                        verticalAlign: 'top',
+                        marginLeft: '0.04em',
+                        lineHeight: 1,
+                      }}>
+                        {accidental}
+                      </span>
+                    )}
+                  </>
+                )
+              })()}
+            </p>
+          </div>
         </div>
 
-        <p className="text-zinc-500 text-sm">
-          Heard: <span data-testid="heard-note" className="text-zinc-300 font-mono">{heardNote}</span>
-        </p>
+        <div className="heard-chip">
+          Heard:<span data-testid="heard-note">{formatNote(heardNote)}</span>
+        </div>
 
-        <p className="text-zinc-500 text-sm">Score: {state.score}</p>
-
-        <button
-          onClick={quit}
-          className="px-6 py-2 rounded-lg border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 transition-colors"
-        >
+        <button onClick={quit} className="btn-quit">
           Quit
         </button>
       </div>

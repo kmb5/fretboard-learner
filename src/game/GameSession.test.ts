@@ -104,7 +104,7 @@ describe('sessionReducer — ADVANCE', () => {
 describe('sessionReducer — QUIT', () => {
   it('resets state to idle from any status', () => {
     for (const status of ['waiting', 'correct', 'wrong'] as const) {
-      const state: SessionState = { status, currentNote: 'A', score: 5, difficulty: 'practice' }
+      const state: SessionState = { status, currentNote: 'A', score: 5, difficulty: 'practice', stringFilter: null }
       const next = sessionReducer(state, { type: 'QUIT' })
       expect(next.status).toBe('idle')
       expect(next.score).toBe(0)
@@ -118,9 +118,9 @@ describe('sessionReducer — QUIT', () => {
 // ---------------------------------------------------------------------------
 
 describe('CORRECT_ADVANCE_DELAY_MS', () => {
-  it('is approximately 800 ms', () => {
-    expect(CORRECT_ADVANCE_DELAY_MS).toBeGreaterThanOrEqual(700)
-    expect(CORRECT_ADVANCE_DELAY_MS).toBeLessThanOrEqual(900)
+  it('is approximately 1100 ms', () => {
+    expect(CORRECT_ADVANCE_DELAY_MS).toBeGreaterThanOrEqual(900)
+    expect(CORRECT_ADVANCE_DELAY_MS).toBeLessThanOrEqual(1400)
   })
 })
 

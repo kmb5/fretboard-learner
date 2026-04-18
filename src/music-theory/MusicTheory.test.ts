@@ -3,10 +3,13 @@ import {
   NOTE_NAMES,
   SCALES,
   NOTES_PER_STRING,
+  CHORD_INTERVALS,
   pitch2note,
   getNotesInScale,
   getAllPositionsForNote,
+  getChordTones,
   type ScaleType,
+  type ChordType,
   type FretboardPosition,
 } from './MusicTheory'
 
@@ -325,5 +328,110 @@ describe('getAllPositionsForNote', () => {
   it('a note not in standard tuning range returns empty array', () => {
     // 'X' is not a valid note
     expect(getAllPositionsForNote('X')).toEqual([])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// CHORD_INTERVALS
+// ---------------------------------------------------------------------------
+
+describe('CHORD_INTERVALS', () => {
+  it('exports all 7 chord types', () => {
+    const expected: ChordType[] = [
+      'major', 'minor', 'dominant7', 'major7', 'minor7', 'diminished', 'augmented',
+    ]
+    expected.forEach((c) => expect(CHORD_INTERVALS).toHaveProperty(c))
+  })
+
+  it('every interval array begins with 0 (root is always included)', () => {
+    Object.values(CHORD_INTERVALS).forEach((intervals) => {
+      expect(intervals[0]).toBe(0)
+    })
+  })
+
+  it('major chord has intervals [0, 4, 7]', () => {
+    expect(CHORD_INTERVALS.major).toEqual([0, 4, 7])
+  })
+
+  it('minor chord has intervals [0, 3, 7]', () => {
+    expect(CHORD_INTERVALS.minor).toEqual([0, 3, 7])
+  })
+
+  it('dominant7 chord has intervals [0, 4, 7, 10]', () => {
+    expect(CHORD_INTERVALS.dominant7).toEqual([0, 4, 7, 10])
+  })
+
+  it('major7 chord has intervals [0, 4, 7, 11]', () => {
+    expect(CHORD_INTERVALS.major7).toEqual([0, 4, 7, 11])
+  })
+
+  it('minor7 chord has intervals [0, 3, 7, 10]', () => {
+    expect(CHORD_INTERVALS.minor7).toEqual([0, 3, 7, 10])
+  })
+
+  it('diminished chord has intervals [0, 3, 6]', () => {
+    expect(CHORD_INTERVALS.diminished).toEqual([0, 3, 6])
+  })
+
+  it('augmented chord has intervals [0, 4, 8]', () => {
+    expect(CHORD_INTERVALS.augmented).toEqual([0, 4, 8])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// getChordTones
+// ---------------------------------------------------------------------------
+
+describe('getChordTones', () => {
+  it('C major returns [C, E, G]', () => {
+    expect(getChordTones('C', 'major')).toEqual(['C', 'E', 'G'])
+  })
+
+  it('C minor returns [C, D#, G]', () => {
+    expect(getChordTones('C', 'minor')).toEqual(['C', 'D#', 'G'])
+  })
+
+  it('G major returns [G, B, D]', () => {
+    expect(getChordTones('G', 'major')).toEqual(['G', 'B', 'D'])
+  })
+
+  it('A minor returns [A, C, E]', () => {
+    expect(getChordTones('A', 'minor')).toEqual(['A', 'C', 'E'])
+  })
+
+  it('C dominant7 returns [C, E, G, A#]', () => {
+    expect(getChordTones('C', 'dominant7')).toEqual(['C', 'E', 'G', 'A#'])
+  })
+
+  it('C major7 returns [C, E, G, B]', () => {
+    expect(getChordTones('C', 'major7')).toEqual(['C', 'E', 'G', 'B'])
+  })
+
+  it('C minor7 returns [C, D#, G, A#]', () => {
+    expect(getChordTones('C', 'minor7')).toEqual(['C', 'D#', 'G', 'A#'])
+  })
+
+  it('B augmented wraps correctly → [B, D#, G]', () => {
+    // rootIdx=11: 11+4=15→15%12=3 (D#), 11+8=19→19%12=7 (G)
+    expect(getChordTones('B', 'augmented')).toEqual(['B', 'D#', 'G'])
+  })
+
+  it('all 12 root keys × major produce 3-note arrays', () => {
+    NOTE_NAMES.forEach((key) => {
+      expect(getChordTones(key, 'major')).toHaveLength(3)
+    })
+  })
+
+  it('all returned notes are valid NOTE_NAMES members', () => {
+    const chordTypes: ChordType[] = [
+      'major', 'minor', 'dominant7', 'major7', 'minor7', 'diminished', 'augmented',
+    ]
+    NOTE_NAMES.forEach((key) => {
+      chordTypes.forEach((chord) => {
+        getChordTones(key, chord).forEach((note) => {
+          expect(NOTE_NAMES).toContain(note)
+        })
+      })
+    })
   })
 })

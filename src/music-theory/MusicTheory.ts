@@ -11,6 +11,15 @@ export type ScaleType =
   | 'minor_pentatonic'
   | 'phrygian_dominant'
 
+export type ChordType =
+  | 'major'
+  | 'minor'
+  | 'dominant7'
+  | 'major7'
+  | 'minor7'
+  | 'diminished'
+  | 'augmented'
+
 export type StringName = 'e' | 'B' | 'G' | 'D' | 'A' | 'E'
 
 export interface FretboardPosition {
@@ -50,6 +59,40 @@ export const NOTES_PER_STRING: Record<StringName, string[]> = {
   A: ['A2', 'A#2', 'B2', 'C3', 'C#3', 'D3', 'D#3', 'E3', 'F3', 'F#3', 'G3', 'G#3', 'A3'],
   E: ['E2', 'F2', 'F#2', 'G2', 'G#2', 'A2', 'A#2', 'B2', 'C3', 'C#3', 'D3', 'D#3', 'E3'],
 }
+
+// ---------------------------------------------------------------------------
+// Enharmonic helpers
+// ---------------------------------------------------------------------------
+
+export const NATURAL_NOTES = new Set(['C','D','E','F','G','A','B'])
+
+export const SHARP_TO_FLAT: Record<string, string> = {
+  'C#':'Db', 'D#':'Eb', 'F#':'Gb', 'G#':'Ab', 'A#':'Bb',
+}
+export const FLAT_TO_SHARP: Record<string, string> = {
+  'Db':'C#', 'Eb':'D#', 'Gb':'F#', 'Ab':'G#', 'Bb':'A#',
+}
+
+/** Normalises any enharmonic to the canonical sharp form. Accepts ♯/♭ symbols too. */
+export function toCanonicalSharp(note: string): string {
+  const ascii = note.replace('♯', '#').replace('♭', 'b')
+  return FLAT_TO_SHARP[ascii] ?? ascii
+}
+
+/**
+ * Formats a note name for display, replacing ASCII `#` with ♯ and flat `b`
+ * with ♭.  Safe to call on non-note strings (e.g. '—') — returns them as-is.
+ */
+export function formatNote(note: string): string {
+  if (note.length === 2 && note[1] === 'b') return note[0] + '♭'
+  return note.replace('#', '♯')
+}
+
+/**
+ * Keys where accidentals should be displayed as flats.
+ * (F major and all flat-key roots by circle-of-fifths convention.)
+ */
+export const FLAT_PREFERRED_ROOTS = new Set(['F','A#','D#','G#','C#','F#'])
 
 // ---------------------------------------------------------------------------
 // pitch2note
@@ -131,4 +174,34 @@ export function getAllPositionsForNote(note: string): FretboardPosition[] {
   }
 
   return positions
+}
+
+// ---------------------------------------------------------------------------
+// Chord tones
+// ---------------------------------------------------------------------------
+
+/**
+ * Semitone offsets from the root for each chord type.
+ * Root (offset 0) is always the first element.
+ */
+export const CHORD_INTERVALS: Record<ChordType, readonly number[]> = {
+  major:      [0, 4, 7],
+  minor:      [0, 3, 7],
+  dominant7:  [0, 4, 7, 10],
+  major7:     [0, 4, 7, 11],
+  minor7:     [0, 3, 7, 10],
+  diminished: [0, 3, 6],
+  augmented:  [0, 4, 8],
+}
+
+/**
+ * Return the note names that form the given chord in the given root key.
+ * Each offset in CHORD_INTERVALS is added to the root's chromatic index
+ * (modulo 12), so e.g. getChordTones('C', 'major') → ['C', 'E', 'G'].
+ */
+export function getChordTones(key: NoteName, chord: ChordType): NoteName[] {
+  const rootIdx = NOTE_NAMES.indexOf(key)
+  return CHORD_INTERVALS[chord].map(
+    (offset) => NOTE_NAMES[(rootIdx + offset) % 12],
+  )
 }

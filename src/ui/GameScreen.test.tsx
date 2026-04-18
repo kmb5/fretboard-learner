@@ -58,7 +58,7 @@ beforeEach(() => {
 describe('GameScreen — static structure', () => {
   it('renders the target note, heard indicator, score, and quit button', async () => {
     await navigateToGameScreen()
-    expect(screen.getByTestId('current-note').textContent).toMatch(/^[A-G]#?$/)
+    expect(screen.getByTestId('current-note').textContent).toMatch(/^[A-G][♯♭]?$/)
     expect(screen.getByTestId('heard-note').textContent).toBe('—')
     expect(screen.getByText(/^Score:/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /quit/i })).toBeInTheDocument()
@@ -100,7 +100,7 @@ describe('GameScreen — Heard indicator', () => {
   it('updates when a note is received from the detector', async () => {
     await navigateToGameScreen()
     await act(async () => { capturedOnNote?.('F#') })
-    expect(screen.getByTestId('heard-note').textContent).toBe('F#')
+    expect(screen.getByTestId('heard-note').textContent).toBe('F♯')
   })
 })
 
@@ -116,7 +116,7 @@ describe('GameScreen — silence reset timer', () => {
     vi.useFakeTimers()
 
     await act(async () => { capturedOnNote?.('F#') })
-    expect(screen.getByTestId('heard-note').textContent).toBe('F#')
+    expect(screen.getByTestId('heard-note').textContent).toBe('F♯')
 
     await act(async () => { vi.advanceTimersByTime(SILENCE_RESET_MS) })
     expect(screen.getByTestId('heard-note').textContent).toBe('—')
@@ -128,7 +128,7 @@ describe('GameScreen — silence reset timer', () => {
 
     await act(async () => { capturedOnNote?.('F#') })
     await act(async () => { vi.advanceTimersByTime(SILENCE_RESET_MS - 1) })
-    expect(screen.getByTestId('heard-note').textContent).toBe('F#')
+    expect(screen.getByTestId('heard-note').textContent).toBe('F♯')
   })
 
   it('resets the timer when a second note arrives before the timeout', async () => {

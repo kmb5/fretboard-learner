@@ -17,6 +17,26 @@ export const CLARITY_THRESHOLD = 0.9
 /** Audio buffer size (samples). Must be a power of two. */
 export const BUFFER_SIZE = 2048
 
+/** Lowest frequency (Hz) a guitar string can produce (low E open ≈ 82 Hz). */
+export const GUITAR_FREQ_MIN = 70
+
+/** Highest frequency (Hz) in the guitar's playable range (fret 12 of high e ≈ 1319 Hz). */
+export const GUITAR_FREQ_MAX = 1400
+
+/**
+ * RMS amplitude threshold below which a frame is considered silent.
+ * Frames below this level reset the sustain counter and window.
+ */
+export const AMPLITUDE_GATE_THRESHOLD = 0.02
+
+/**
+ * Number of consecutive loud frames required before the amplitude gate opens
+ * and frames begin counting toward FRAME_WINDOW. Filters brief transients
+ * such as hand claps, consonants, or pick noise that would otherwise bleed
+ * into the pitch window.
+ */
+export const AMPLITUDE_SUSTAIN_FRAMES = 4
+
 // ---------------------------------------------------------------------------
 // Interfaces
 // ---------------------------------------------------------------------------
@@ -45,7 +65,7 @@ export interface PitchDetector {
 }
 
 // ---------------------------------------------------------------------------
-// Helper (exported for unit testing)
+// Helpers (exported for unit testing)
 // ---------------------------------------------------------------------------
 
 /** Returns the most frequently occurring string in `items`. */
@@ -66,6 +86,15 @@ export function getMostFrequent(items: string[]): string {
   return best
 }
 
+/** Computes the root-mean-square amplitude of a sample buffer. */
+export function getRMS(samples: Float32Array): number {
+  let sum = 0
+  for (let i = 0; i < samples.length; i++) {
+    sum += samples[i] * samples[i]
+  }
+  return Math.sqrt(sum / samples.length)
+}
+
 // ---------------------------------------------------------------------------
 // WebAudioPitchDetector
 // ---------------------------------------------------------------------------
@@ -73,15 +102,23 @@ export function getMostFrequent(items: string[]): string {
 /**
  * Detects musical notes from an injectable AudioSource.
  *
- * Each valid frame (clarity ≥ CLARITY_THRESHOLD) is added to a rolling window.
- * Once FRAME_WINDOW valid readings have accumulated, the most frequent note is
- * emitted via the `onNote` callback and the window resets.
+ * Processing pipeline per frame:
+ *   1. Amplitude gate — discard frames below AMPLITUDE_GATE_THRESHOLD; reset
+ *      sustain counter and window on silence to prevent cross-note contamination.
+ *   2. Sustain gate — require AMPLITUDE_SUSTAIN_FRAMES consecutive loud frames
+ *      before counting toward FRAME_WINDOW (filters brief transients).
+ *   3. Pitchy pitch detection — discard frames below CLARITY_THRESHOLD.
+ *   4. Frequency range guard — discard pitches outside [GUITAR_FREQ_MIN,
+ *      GUITAR_FREQ_MAX] (filters voices, HVAC, and other environmental noise).
+ *   5. Window accumulation — once FRAME_WINDOW valid readings accumulate, emit
+ *      the most frequent note and reset.
  */
 export class WebAudioPitchDetector implements PitchDetector {
   private readonly audioSource: AudioSource
   private noteCallback: ((note: string) => void) | null = null
   private window: string[] = []
   private pitchy: PitchyDetector<Float32Array> | null = null
+  private sustainCount = 0
 
   constructor(audioSource: AudioSource) {
     this.audioSource = audioSource
@@ -93,18 +130,34 @@ export class WebAudioPitchDetector implements PitchDetector {
 
   async start(): Promise<void> {
     this.window = []
+    this.sustainCount = 0
     await this.audioSource.start((samples, sampleRate) => {
-      // Lazily create the Pitchy detector on the first frame so it matches
-      // the actual buffer size used by the audio source.
-      if (!this.pitchy) {
-        this.pitchy = PitchyDetector.forFloat32Array(samples.length)
-        this.pitchy.minVolumeDecibels = -30
+      // 1. Amplitude gate
+      if (getRMS(samples) < AMPLITUDE_GATE_THRESHOLD) {
+        this.sustainCount = 0
+        this.window = []
+        return
       }
 
-      const [freq, clarity] = this.pitchy.findPitch(samples, sampleRate)
+      // 2. Sustain gate — require N consecutive loud frames before counting
+      this.sustainCount++
+      if (this.sustainCount < AMPLITUDE_SUSTAIN_FRAMES) return
 
+      // Lazily create the Pitchy detector on the first qualifying frame so it
+      // matches the actual buffer size used by the audio source.
+      if (!this.pitchy) {
+        this.pitchy = PitchyDetector.forFloat32Array(samples.length)
+        this.pitchy.minVolumeDecibels = -20
+      }
+
+      // 3. Clarity gate
+      const [freq, clarity] = this.pitchy.findPitch(samples, sampleRate)
       if (clarity < CLARITY_THRESHOLD || freq <= 0) return
 
+      // 4. Frequency range guard
+      if (freq < GUITAR_FREQ_MIN || freq > GUITAR_FREQ_MAX) return
+
+      // 5. Window accumulation
       this.window.push(pitch2note(freq))
 
       if (this.window.length >= FRAME_WINDOW) {
@@ -117,6 +170,7 @@ export class WebAudioPitchDetector implements PitchDetector {
   stop(): void {
     this.audioSource.stop()
     this.window = []
+    this.sustainCount = 0
     this.pitchy = null
   }
 }
@@ -128,6 +182,8 @@ export class WebAudioPitchDetector implements PitchDetector {
 /**
  * Real audio source: requests microphone access via `getUserMedia` and feeds
  * frames to the callback using an AnalyserNode polled with requestAnimationFrame.
+ * A highpass BiquadFilter at GUITAR_FREQ_MIN Hz is inserted before the analyser
+ * to attenuate sub-bass rumble before pitch analysis.
  */
 export class WebAudioSource implements AudioSource {
   private context: AudioContext | null = null
@@ -144,9 +200,13 @@ export class WebAudioSource implements AudioSource {
     })
     this.context = new AudioContext()
     const source = this.context.createMediaStreamSource(this.stream)
+    const filter = this.context.createBiquadFilter()
+    filter.type = 'highpass'
+    filter.frequency.value = GUITAR_FREQ_MIN
     const analyser = this.context.createAnalyser()
     analyser.fftSize = BUFFER_SIZE
-    source.connect(analyser)
+    source.connect(filter)
+    filter.connect(analyser)
 
     // buffer is reused across frames; onFrame must consume samples synchronously.
     const buffer = new Float32Array(analyser.fftSize)

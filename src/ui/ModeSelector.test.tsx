@@ -167,8 +167,12 @@ describe('ModeSelector — key picker', () => {
     const user = userEvent.setup()
     renderModeSelector()
     await user.click(screen.getByRole('button', { name: /^scale$/i }))
-    for (const key of ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']) {
-      expect(screen.getByRole('button', { name: key })).toBeInTheDocument()
+    // Natural notes have exact names; accidentals display as "C♯/D♭" etc., so use regex.
+    for (const key of ['C', 'D', 'E', 'F', 'G', 'A', 'B']) {
+      expect(screen.getByRole('button', { name: new RegExp(`^${key}$`) })).toBeInTheDocument()
+    }
+    for (const sharp of ['C♯', 'D♯', 'F♯', 'G♯', 'A♯']) {
+      expect(screen.getByRole('button', { name: new RegExp(sharp) })).toBeInTheDocument()
     }
   })
 
@@ -291,6 +295,157 @@ describe('ModeSelector — navigation on Start (Scale)', () => {
     await user.click(screen.getByRole('button', { name: /^scale$/i }))
     await user.click(screen.getByRole('button', { name: /^A$/ }))
     await user.click(screen.getByRole('button', { name: 'Major' }))
+    await user.click(screen.getByRole('button', { name: /start/i }))
+    expect(screen.queryByRole('button', { name: /start/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /quit/i })).toBeInTheDocument()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Chord Tones mode
+// ---------------------------------------------------------------------------
+
+describe('ModeSelector — mode type toggle (Chord Tones)', () => {
+  it('renders the Chord Tones mode button', () => {
+    renderModeSelector()
+    expect(screen.getByRole('button', { name: /chord tones/i })).toBeInTheDocument()
+  })
+
+  it('switches to Chord Tones mode when clicked', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    expect(screen.getByRole('button', { name: /chord tones/i })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /random string/i })).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByRole('button', { name: /^scale$/i })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('hides the string picker when Chord Tones mode is active', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    // 'e' (lowercase high-e string) only appears in the string picker
+    expect(screen.queryByRole('button', { name: 'e' })).not.toBeInTheDocument()
+  })
+})
+
+describe('ModeSelector — key picker (Chord Tones)', () => {
+  it('renders all 12 chromatic key buttons when Chord Tones mode is active', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    // Natural notes have exact names; accidentals display as "C♯/D♭" etc., so use regex.
+    for (const key of ['C', 'D', 'E', 'F', 'G', 'A', 'B']) {
+      expect(screen.getByRole('button', { name: new RegExp(`^${key}$`) })).toBeInTheDocument()
+    }
+    for (const sharp of ['C♯', 'D♯', 'F♯', 'G♯', 'A♯']) {
+      expect(screen.getByRole('button', { name: new RegExp(sharp) })).toBeInTheDocument()
+    }
+  })
+
+  it('shared key selection persists when switching between Scale and Chord Tones', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    // Select G in Scale mode
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    await user.click(screen.getByRole('button', { name: /^G$/ }))
+    expect(screen.getByRole('button', { name: /^G$/ })).toHaveAttribute('aria-pressed', 'true')
+    // Switch to Chord Tones — G key should still be pressed
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    expect(screen.getByRole('button', { name: /^G$/ })).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
+describe('ModeSelector — chord type picker', () => {
+  it('renders all 7 chord type buttons when Chord Tones mode is active', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    for (const label of [
+      'Major', 'Minor', 'Dominant 7', 'Major 7', 'Minor 7', 'Diminished', 'Augmented',
+    ]) {
+      expect(screen.getByRole('button', { name: label })).toBeInTheDocument()
+    }
+  })
+
+  it('marks a chord type button as pressed when clicked', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    const btn = screen.getByRole('button', { name: 'Minor' })
+    expect(btn).toHaveAttribute('aria-pressed', 'false')
+    await user.click(btn)
+    expect(btn).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('does not show chord type picker in Scale mode', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    expect(screen.queryByRole('button', { name: 'Dominant 7' })).not.toBeInTheDocument()
+  })
+
+  it('does not show chord type picker in Random String mode', () => {
+    renderModeSelector()
+    expect(screen.queryByRole('button', { name: 'Dominant 7' })).not.toBeInTheDocument()
+  })
+})
+
+describe('ModeSelector — Start button in Chord Tones mode', () => {
+  it('is disabled when neither key nor chord type is selected', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeDisabled()
+  })
+
+  it('is disabled when only the key is selected', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    await user.click(screen.getByRole('button', { name: /^A$/ }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeDisabled()
+  })
+
+  it('is disabled when only the chord type is selected', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    await user.click(screen.getByRole('button', { name: 'Major' }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeDisabled()
+  })
+
+  it('is enabled when both key and chord type are selected', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    await user.click(screen.getByRole('button', { name: /^A$/ }))
+    await user.click(screen.getByRole('button', { name: 'Major' }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeEnabled()
+  })
+})
+
+describe('ModeSelector — mode switch state preservation (Chord Tones)', () => {
+  it('disables Start when switching from filled Chord Tones to empty Random String', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    await user.click(screen.getByRole('button', { name: /^G$/ }))
+    await user.click(screen.getByRole('button', { name: 'Minor' }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: /random string/i }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeDisabled()
+  })
+})
+
+describe('ModeSelector — navigation on Start (Chord Tones)', () => {
+  it('transitions to GameScreen when Start is pressed in Chord Tones mode', async () => {
+    const user = userEvent.setup()
+    const { default: App } = await import('../App')
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /chord tones/i }))
+    await user.click(screen.getByRole('button', { name: /^A$/ }))
+    await user.click(screen.getByRole('button', { name: 'Minor' }))
     await user.click(screen.getByRole('button', { name: /start/i }))
     expect(screen.queryByRole('button', { name: /start/i })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /quit/i })).toBeInTheDocument()

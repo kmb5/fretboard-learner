@@ -1,10 +1,354 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Design tokens
+   ============================================================ */
 :root {
-  color-scheme: dark;
+  color-scheme: dark light;
+
+  --bg:        #0d0b09;
+  --surface:   #1c1812;
+  --panel:     #242019;
+  --border:    #3a3020;
+
+  --fg:        #f0e8d8;
+  --fg-2:      #9e8e78;
+  --fg-3:      #5e5040;
+
+  --amber:     #e8880e;
+  --amber-hl:  #ffad35;
+  --green:     #1fcf78;
+  --red:       #f04040;
+
+  /* Body background glow */
+  --bg-glow:   rgba(232, 136, 14, 0.06);
+  --bg-shadow: rgba(0, 0, 0, 0.45);
+
+  /* Fretboard frame */
+  --frame-top:    #1a1510;
+  --frame-bottom: #110e0b;
+
+  /* Fretboard internals */
+  --neck-start:     #1c1814;
+  --neck-mid:       #242018;
+  --neck-end:       #181410;
+  --nut-color:      #b8924a;
+  --fret-color:     #2c2820;
+  --string-color:   #7a6e5c;
+  --dot-color:      rgba(200, 126, 24, 0.22);
+  --fret-num-color: #4a3e30;
+}
+
+[data-theme="light"] {
+  --bg:        #f5f0e8;
+  --surface:   #ede6d8;
+  --panel:     #e8e0d0;
+  --border:    #c8b898;
+
+  --fg:        #2c2418;
+  --fg-2:      #6a5838;
+  --fg-3:      #9a8868;
+
+  --amber:     #c47a0a;
+  --amber-hl:  #e89018;
+  --green:     #1a9e58;
+  --red:       #d03030;
+
+  --bg-glow:   rgba(196, 122, 10, 0.08);
+  --bg-shadow: rgba(0, 0, 0, 0.12);
+
+  --frame-top:    #d4c9b0;
+  --frame-bottom: #c8bba4;
+
+  --neck-start:     #d8cdb8;
+  --neck-mid:       #cec3ac;
+  --neck-end:       #c8bba4;
+  --nut-color:      #8e6a2e;
+  --fret-color:     #a89e8a;
+  --string-color:   #6c6050;
+  --dot-color:      rgba(168, 108, 16, 0.25);
+  --fret-num-color: #6a5838;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
 }
 
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
+  min-height: 100%;
+  font-family: 'Fira Code', monospace;
+  background-color: var(--bg);
+  color: var(--fg);
+  background-image:
+    radial-gradient(ellipse at 50% 0%, var(--bg-glow) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 100%, var(--bg-shadow) 0%, transparent 65%);
+  background-attachment: fixed;
+}
+
+/* Grain texture overlay — pure CSS, no external assets */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+  mix-blend-mode: overlay;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar              { width: 5px; }
+::-webkit-scrollbar-track        { background: var(--bg); }
+::-webkit-scrollbar-thumb        { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--fg-3); }
+
+/* ============================================================
+   Typography utilities
+   ============================================================ */
+.font-display { font-family: 'Cormorant SC', serif; }
+.font-amp     { font-family: 'Bebas Neue', cursive; }
+.font-mono    { font-family: 'Fira Code', monospace; }
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* New note arriving — fade up with a spring overshoot */
+@keyframes note-advance {
+  0%   { opacity: 0; transform: scale(0.72) translateY(10px); }
+  60%  { opacity: 1; transform: scale(1.08) translateY(-2px); }
+  80%  { transform: scale(0.97) translateY(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Correct — big punch with spring bounce */
+@keyframes note-correct {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(1.22); }
+  55%  { transform: scale(0.93); }
+  75%  { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 18px 0px rgba(232, 136, 14, 0.25); }
+  50%       { box-shadow: 0 0 30px 8px rgba(232, 136, 14, 0.55); }
+}
+
+.anim-fade-up {
+  animation: fade-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-note-advance {
+  animation: note-advance 0.52s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.anim-note-correct {
+  animation: note-correct 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn-ghost {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--border);
+  color: var(--fg-2);
+  background: transparent;
+  border-radius: 8px;
+  padding: 11px 12px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s, background 0.18s, box-shadow 0.18s;
+  text-align: center;
+}
+.btn-ghost:hover {
+  border-color: var(--fg-3);
+  color: var(--fg);
+}
+.btn-ghost[aria-pressed="true"] {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #0d0b09;
+  font-weight: 500;
+  box-shadow: 0 0 14px 0px rgba(232, 136, 14, 0.4);
+}
+.btn-ghost[aria-pressed="true"]:hover {
+  background: var(--amber-hl);
+  border-color: var(--amber-hl);
+}
+
+.btn-primary {
+  display: block;
+  width: 100%;
+  background: var(--amber);
+  color: #0d0b09;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 24px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--amber-hl);
+}
+.btn-primary:disabled {
+  opacity: 0.22;
+  cursor: not-allowed;
+}
+.btn-primary:not(:disabled) {
+  animation: glow-pulse 2.2s ease-in-out infinite;
+}
+
+.btn-quit {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg-3);
+  border-radius: 8px;
+  padding: 7px 20px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s;
+}
+.btn-quit:hover {
+  border-color: var(--fg-3);
+  color: var(--fg-2);
+}
+
+.btn-retry {
+  background: var(--amber);
+  color: #0d0b09;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.btn-retry:hover {
+  background: var(--amber-hl);
+}
+
+/* ============================================================
+   Layout components
+   ============================================================ */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.section-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.6875rem;
+  color: var(--fg-3);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* ============================================================
+   Heard chip (game screen)
+   ============================================================ */
+.heard-chip {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.75rem;
+  color: var(--fg-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 14px;
+  letter-spacing: 0.04em;
+}
+.heard-chip span {
+  color: var(--fg-2);
+  margin-left: 6px;
+}
+
+/* ============================================================
+   Note glow aura (game screen)
+   ============================================================ */
+.note-aura {
+  position: relative;
+  display: inline-block;
+}
+.note-aura::before {
+  content: '';
+  position: absolute;
+  inset: -60%;
+  border-radius: 50%;
+  filter: blur(52px);
+  opacity: 0;
+  transition: background-color 0.5s ease, opacity 0.4s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+.note-aura[data-status="waiting"]::before  { background: var(--amber); opacity: 0.22; }
+.note-aura[data-status="correct"]::before  { background: var(--green); opacity: 0.38; }
+.note-aura[data-status="wrong"]::before    { background: var(--red);   opacity: 0.38; }
+
+/* ============================================================
+   Fretboard frame
+   ============================================================ */
+.fretboard-frame {
+  max-width: 1100px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 10px 10px;
+  background: linear-gradient(to bottom, var(--frame-top), var(--frame-bottom));
+  box-shadow:
+    0 6px 40px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 225, 160, 0.06);
+}
+
+/* ============================================================
+   Settings modal
+   ============================================================ */
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  width: 100%;
+  max-width: 320px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
 }
