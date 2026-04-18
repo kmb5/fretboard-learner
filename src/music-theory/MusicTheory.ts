@@ -26,6 +26,9 @@ export const NOTE_NAMES = [
   'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
 ] as const
 
+/** Union of the 12 valid chromatic note names. */
+export type NoteName = typeof NOTE_NAMES[number]
+
 // Interval patterns: each digit is semitone steps to the next scale degree.
 // Last digit brings you back to the root (octave) and is handled separately.
 export const SCALES: Record<ScaleType, string> = {

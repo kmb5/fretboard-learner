@@ -3,7 +3,7 @@ import { useGameSession } from '../game/GameSessionProvider'
 import { RandomStringMode, ScaleMode, SCALE_LABELS, SCALE_TYPES } from '../game/GameMode'
 import type { Difficulty } from '../game/GameMode'
 import { NOTE_NAMES } from '../music-theory/MusicTheory'
-import type { StringName, ScaleType } from '../music-theory/MusicTheory'
+import type { StringName, ScaleType, NoteName } from '../music-theory/MusicTheory'
 
 type ModeType = 'random-string' | 'scale'
 
@@ -14,7 +14,7 @@ export default function ModeSelector() {
 
   const [modeType, setModeType] = useState<ModeType>('random-string')
   const [selectedString, setSelectedString] = useState<StringName | null>(null)
-  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [selectedKey, setSelectedKey] = useState<NoteName | null>(null)
   const [selectedScale, setSelectedScale] = useState<ScaleType | null>(null)
   const [difficulty, setDifficulty] = useState<Difficulty>('learning')
 

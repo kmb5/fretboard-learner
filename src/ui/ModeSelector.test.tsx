@@ -215,6 +215,24 @@ describe('ModeSelector — scale picker', () => {
 // Scale mode — Start button enabled state
 // ---------------------------------------------------------------------------
 
+describe('ModeSelector — mode switch state preservation', () => {
+  it('disables Start when switching from filled Scale to empty Random String', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    // Fill Scale mode — Start becomes enabled.
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    await user.click(screen.getByRole('button', { name: /^G$/ }))
+    await user.click(screen.getByRole('button', { name: 'Blues' }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeEnabled()
+    // Switch to Random String with no string selected — Start must be disabled.
+    await user.click(screen.getByRole('button', { name: /random string/i }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeDisabled()
+    // Switch back to Scale — previous selections are preserved, Start is enabled again.
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeEnabled()
+  })
+})
+
 describe('ModeSelector — Start button in Scale mode', () => {
   it('is disabled when neither key nor scale is selected', async () => {
     const user = userEvent.setup()

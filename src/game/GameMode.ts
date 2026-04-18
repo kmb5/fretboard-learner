@@ -1,5 +1,5 @@
 import { NOTES_PER_STRING, getNotesInScale } from '../music-theory/MusicTheory'
-import type { StringName, ScaleType } from '../music-theory/MusicTheory'
+import type { StringName, ScaleType, NoteName } from '../music-theory/MusicTheory'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -86,8 +86,21 @@ export const SCALE_LABELS: Record<ScaleType, string> = {
   phrygian_dominant: 'Phrygian Dominant',
 }
 
-/** Ordered list of all supported scale types. */
-export const SCALE_TYPES = Object.keys(SCALE_LABELS) as ScaleType[]
+/**
+ * Ordered list of all supported scale types.
+ * Explicit ordering controls display order in the UI; do not derive from
+ * Object.keys(SCALE_LABELS) which would make order an implicit side effect
+ * of insertion order in that record.
+ */
+export const SCALE_TYPES: ScaleType[] = [
+  'major',
+  'natural_minor',
+  'blues',
+  'major_pentatonic',
+  'minor_pentatonic',
+  'augmented',
+  'phrygian_dominant',
+]
 
 /**
  * Picks random notes from the note pool of a given key + scale combination.
@@ -96,12 +109,12 @@ export const SCALE_TYPES = Object.keys(SCALE_LABELS) as ScaleType[]
  * automatically spans all positions across the full neck.
  */
 export class ScaleMode implements GameMode {
-  private readonly key: string
+  private readonly key: NoteName
   private readonly scale: ScaleType
   private readonly notePool: string[]
   private currentNote = ''
 
-  constructor(key: string, scale: ScaleType) {
+  constructor(key: NoteName, scale: ScaleType) {
     this.key = key
     this.scale = scale
     this.notePool = getNotesInScale(key, scale)
