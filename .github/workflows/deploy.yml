@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: CI / Deploy
 
 on:
   push:
@@ -12,37 +12,52 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: pnpm/action-setup@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-
       - run: pnpm install --frozen-lockfile
-
       - run: pnpm lint
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm test
 
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm build
-
       - uses: actions/upload-pages-artifact@v3
         if: github.ref == 'refs/heads/master'
         with:
           path: dist
 
   deploy:
-    needs: build
+    needs: [lint, test, build]
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment:
