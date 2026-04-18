@@ -111,6 +111,7 @@ export default function FretboardSVG({ highlights = [] }: Props) {
   return (
     <div style={{ perspective: '800px', width: '100%' }}>
       <svg
+        role="img"
         viewBox={`0 0 ${SVG_W} ${SVG_H}`}
         width="100%"
         style={{ display: 'block', transform: 'rotateX(12deg)', transformOrigin: 'top center' }}

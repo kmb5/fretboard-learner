@@ -11,8 +11,8 @@ import {
   INITIAL_STATE,
   CORRECT_ADVANCE_DELAY_MS,
 } from './GameSession'
-import type { SessionState, Difficulty } from './GameSession'
-import type { GameMode } from './GameMode'
+import type { SessionState } from './GameSession'
+import type { GameMode, Difficulty } from './GameMode'
 
 // ---------------------------------------------------------------------------
 // Context value type
