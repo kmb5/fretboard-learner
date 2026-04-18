@@ -352,3 +352,77 @@ body::after {
   max-width: 320px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
 }
+
+/* ============================================================
+   Game screen — mobile landscape
+   ============================================================ */
+
+/* Score shown inline next to quit on mobile; hidden otherwise */
+.game-score-mobile { display: none; }
+
+/* Desktop: heard + quit sit together in a centered row */
+.game-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+/* Desktop bottom padding (replaces the removed pb-10 Tailwind class) */
+.game-controls {
+  padding-bottom: 2.5rem;
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Hide the title/score header bar — every pixel counts */
+  .game-header-bar { display: none; }
+
+  /* Tighter fretboard padding, respect notch/dynamic island */
+  .game-fretboard {
+    padding-top:    max(env(safe-area-inset-top),   0.5rem);
+    padding-left:   max(env(safe-area-inset-left),  1rem);
+    padding-right:  max(env(safe-area-inset-right), 1rem);
+    padding-bottom: 0;
+  }
+
+  .game-controls {
+    justify-content: flex-start;
+    gap: 0;
+    padding-top:    0.5rem;
+    padding-bottom: max(env(safe-area-inset-bottom), 0.6rem);
+    padding-left:   max(env(safe-area-inset-left),  2rem);
+    padding-right:  max(env(safe-area-inset-right), 2rem);
+  }
+
+  /* Note group fills remaining space and centres its content — sits midway between fretboard and bottom row */
+  .game-note-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Slightly bigger note — !important to beat inline style */
+  .game-note-display {
+    font-size: clamp(3.5rem, 11vw, 5rem) !important;
+  }
+
+  /* Tighter gap between label and note */
+  .game-controls .section-label {
+    margin-bottom: 6px !important;
+  }
+
+  /* Bottom row: score left · heard center · quit right */
+  .game-bottom-row {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .game-score-mobile {
+    display: block;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.75rem;
+    color: var(--fg-3);
+  }
+}

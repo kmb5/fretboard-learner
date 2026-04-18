@@ -8,6 +8,7 @@ export interface HighlightSpec {
 interface Props {
   highlights?: HighlightSpec[]
   isLeftHanded?: boolean
+  isFlipped?: boolean
 }
 
 // ---------------------------------------------------------------------------
@@ -44,9 +45,14 @@ const NECK_MID_Y = (NECK_TOP + NECK_BOTTOM) / 2
 /** Low-to-high ordering; rendered top-to-bottom in the SVG. */
 const STRINGS: StringName[] = ['E', 'A', 'D', 'G', 'B', 'e']
 
-/** Pre-computed Y coordinate for each string — avoids repeated indexOf scans. */
+/** Default (guitar view) Y coordinate for each string. */
 const STRING_Y: Record<StringName, number> = Object.fromEntries(
   STRINGS.map((name, i) => [name, NECK_TOP + i * STRING_SPACING]),
+) as Record<StringName, number>
+
+/** Tab view: high e on top, low E on bottom. */
+const STRING_Y_FLIPPED: Record<StringName, number> = Object.fromEntries(
+  [...STRINGS].reverse().map((name, i) => [name, NECK_TOP + i * STRING_SPACING]),
 ) as Record<StringName, number>
 
 /**
@@ -85,9 +91,6 @@ const HIGHLIGHT_FILL: Record<HighlightSpec['color'], string> = {
 // Coordinate helpers
 // ---------------------------------------------------------------------------
 
-function getStringY(name: StringName): number {
-  return STRING_Y[name]
-}
 
 /** X of fret line n: 0 = nut, 1–12 = fret lines. */
 function getFretLineX(n: number): number {
@@ -108,7 +111,8 @@ function getDotX(fret: number): number {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function FretboardSVG({ highlights = [], isLeftHanded = false }: Props) {
+export default function FretboardSVG({ highlights = [], isLeftHanded = false, isFlipped = false }: Props) {
+  const stringY = isFlipped ? STRING_Y_FLIPPED : STRING_Y
   return (
     <div className="fretboard-frame">
       <div style={{ perspective: '800px', width: '100%' }}>
@@ -177,9 +181,9 @@ export default function FretboardSVG({ highlights = [], isLeftHanded = false }: 
               key={name}
               data-testid={`string-${name}`}
               x1={NUT_X}
-              y1={getStringY(name)}
+              y1={stringY[name]}
               x2={NECK_RIGHT}
-              y2={getStringY(name)}
+              y2={stringY[name]}
               stroke="var(--string-color)"
               strokeWidth={STRING_WIDTHS[name]}
             />
@@ -223,7 +227,7 @@ export default function FretboardSVG({ highlights = [], isLeftHanded = false }: 
             >
               <text
                 x={STRING_LABEL_X}
-                y={getStringY(name)}
+                y={stringY[name]}
                 textAnchor="middle"
                 dominantBaseline="central"
                 fill="var(--string-color)"
@@ -265,7 +269,7 @@ export default function FretboardSVG({ highlights = [], isLeftHanded = false }: 
               {/* Outer ring */}
               <circle
                 cx={getDotX(position.fret)}
-                cy={getStringY(position.string)}
+                cy={stringY[position.string]}
                 r={14}
                 fill="none"
                 stroke={HIGHLIGHT_FILL[color]}
@@ -278,7 +282,7 @@ export default function FretboardSVG({ highlights = [], isLeftHanded = false }: 
                 data-color={color}
                 aria-label={`${position.string} string, fret ${position.fret}`}
                 cx={getDotX(position.fret)}
-                cy={getStringY(position.string)}
+                cy={stringY[position.string]}
                 r={9}
                 fill={HIGHLIGHT_FILL[color]}
               />
