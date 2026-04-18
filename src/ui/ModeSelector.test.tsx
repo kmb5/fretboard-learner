@@ -125,18 +125,155 @@ describe('ModeSelector — difficulty toggle', () => {
 })
 
 // ---------------------------------------------------------------------------
+// Mode type toggle
+// ---------------------------------------------------------------------------
+
+describe('ModeSelector — mode type toggle', () => {
+  it('defaults to Random String mode', () => {
+    renderModeSelector()
+    expect(screen.getByRole('button', { name: /random string/i })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /^scale$/i })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('switches to Scale mode when Scale is clicked', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    expect(screen.getByRole('button', { name: /^scale$/i })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /random string/i })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('hides the string picker when Scale mode is active', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    // 'e' (high e string, lowercase) is unique to the string picker — not in the key picker
+    expect(screen.queryByRole('button', { name: 'e' })).not.toBeInTheDocument()
+  })
+
+  it('hides key and scale pickers when Random String mode is active', () => {
+    renderModeSelector()
+    expect(screen.queryByRole('button', { name: 'Major' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^C$/ })).not.toBeInTheDocument()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Scale mode — key picker
+// ---------------------------------------------------------------------------
+
+describe('ModeSelector — key picker', () => {
+  it('renders all 12 chromatic key buttons when Scale mode is active', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    for (const key of ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']) {
+      expect(screen.getByRole('button', { name: key })).toBeInTheDocument()
+    }
+  })
+
+  it('marks a key button as pressed when clicked', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    const btn = screen.getByRole('button', { name: /^C$/ })
+    expect(btn).toHaveAttribute('aria-pressed', 'false')
+    await user.click(btn)
+    expect(btn).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Scale mode — scale type picker
+// ---------------------------------------------------------------------------
+
+describe('ModeSelector — scale picker', () => {
+  it('renders all 7 scale type buttons when Scale mode is active', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    for (const label of [
+      'Major', 'Natural Minor', 'Augmented', 'Blues',
+      'Major Pentatonic', 'Minor Pentatonic', 'Phrygian Dominant',
+    ]) {
+      expect(screen.getByRole('button', { name: label })).toBeInTheDocument()
+    }
+  })
+
+  it('marks a scale button as pressed when clicked', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    const btn = screen.getByRole('button', { name: 'Major' })
+    expect(btn).toHaveAttribute('aria-pressed', 'false')
+    await user.click(btn)
+    expect(btn).toHaveAttribute('aria-pressed', 'true')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Scale mode — Start button enabled state
+// ---------------------------------------------------------------------------
+
+describe('ModeSelector — Start button in Scale mode', () => {
+  it('is disabled when neither key nor scale is selected', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeDisabled()
+  })
+
+  it('is disabled when only the key is selected', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    await user.click(screen.getByRole('button', { name: /^G$/ }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeDisabled()
+  })
+
+  it('is disabled when only the scale is selected', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    await user.click(screen.getByRole('button', { name: 'Blues' }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeDisabled()
+  })
+
+  it('is enabled when both key and scale are selected', async () => {
+    const user = userEvent.setup()
+    renderModeSelector()
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    await user.click(screen.getByRole('button', { name: /^G$/ }))
+    await user.click(screen.getByRole('button', { name: 'Blues' }))
+    expect(screen.getByRole('button', { name: /start/i })).toBeEnabled()
+  })
+})
+
+// ---------------------------------------------------------------------------
 // Navigation on Start
 // ---------------------------------------------------------------------------
 
-describe('ModeSelector — navigation on Start', () => {
-  it('transitions away from ModeSelector when Start is pressed', async () => {
+describe('ModeSelector — navigation on Start (Random String)', () => {
+  it('transitions to GameScreen when Start is pressed', async () => {
     const user = userEvent.setup()
-    // Render the full App so AppRoutes can swap ModeSelector → GameScreen
     const { default: App } = await import('../App')
     render(<App />)
     await user.click(screen.getByRole('button', { name: 'A' }))
     await user.click(screen.getByRole('button', { name: /start/i }))
-    // ModeSelector should no longer be visible (GameScreen stub takes over)
+    expect(screen.queryByRole('button', { name: /start/i })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /quit/i })).toBeInTheDocument()
+  })
+})
+
+describe('ModeSelector — navigation on Start (Scale)', () => {
+  it('transitions to GameScreen when Start is pressed in Scale mode', async () => {
+    const user = userEvent.setup()
+    const { default: App } = await import('../App')
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: /^scale$/i }))
+    await user.click(screen.getByRole('button', { name: /^A$/ }))
+    await user.click(screen.getByRole('button', { name: 'Major' }))
+    await user.click(screen.getByRole('button', { name: /start/i }))
     expect(screen.queryByRole('button', { name: /start/i })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /quit/i })).toBeInTheDocument()
   })

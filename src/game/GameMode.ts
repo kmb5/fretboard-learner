@@ -1,5 +1,5 @@
-import { NOTES_PER_STRING } from '../music-theory/MusicTheory'
-import type { StringName } from '../music-theory/MusicTheory'
+import { NOTES_PER_STRING, getNotesInScale } from '../music-theory/MusicTheory'
+import type { StringName, ScaleType } from '../music-theory/MusicTheory'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -68,5 +68,55 @@ export class RandomStringMode implements GameMode {
 
   private pickRandom(): string {
     return this.notePool[Math.floor(Math.random() * this.notePool.length)]
+  }
+}
+
+// ---------------------------------------------------------------------------
+// ScaleMode
+// ---------------------------------------------------------------------------
+
+/** Human-readable label for each scale type (used by UI and getConfig). */
+export const SCALE_LABELS: Record<ScaleType, string> = {
+  major: 'Major',
+  natural_minor: 'Natural Minor',
+  augmented: 'Augmented',
+  blues: 'Blues',
+  major_pentatonic: 'Major Pentatonic',
+  minor_pentatonic: 'Minor Pentatonic',
+  phrygian_dominant: 'Phrygian Dominant',
+}
+
+/** Ordered list of all supported scale types. */
+export const SCALE_TYPES = Object.keys(SCALE_LABELS) as ScaleType[]
+
+/**
+ * Picks random notes from the note pool of a given key + scale combination.
+ * The pool is the set of unique note names in the scale (octave-stripped).
+ * Because GameScreen uses getAllPositionsForNote(), every generated note
+ * automatically spans all positions across the full neck.
+ */
+export class ScaleMode implements GameMode {
+  private readonly key: string
+  private readonly scale: ScaleType
+  private readonly notePool: string[]
+  private currentNote = ''
+
+  constructor(key: string, scale: ScaleType) {
+    this.key = key
+    this.scale = scale
+    this.notePool = getNotesInScale(key, scale)
+  }
+
+  getNextNote(): string {
+    this.currentNote = this.notePool[Math.floor(Math.random() * this.notePool.length)]
+    return this.currentNote
+  }
+
+  isValidAnswer(played: string): boolean {
+    return played === this.currentNote
+  }
+
+  getConfig(): GameModeConfig {
+    return { label: `${this.key} ${SCALE_LABELS[this.scale]}` }
   }
 }
