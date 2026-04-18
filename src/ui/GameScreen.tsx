@@ -60,7 +60,7 @@ function computeHighlights(
 
 export default function GameScreen() {
   const { state, noteDetected, quit } = useGameSession()
-  const { isLeftHanded } = usePreferences()
+  const { isLeftHanded, isTabView } = usePreferences()
 
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [heardNote, setHeardNote] = useState<string>('—')
@@ -124,16 +124,17 @@ export default function GameScreen() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
-      style={{ backgroundColor: 'var(--bg)', color: 'var(--fg)' }}
+      className="flex flex-col"
+      style={{ backgroundColor: 'var(--bg)', color: 'var(--fg)', height: '100dvh', overflow: 'hidden' }}
     >
-      {/* Header bar */}
+      {/* Header bar — hidden on mobile landscape via .game-header-bar */}
       <header
-        className="flex items-center justify-between px-8 pt-6 pb-4"
+        className="game-header-bar flex items-center justify-between px-8 pt-6 pb-4"
         style={{ borderBottom: '1px solid var(--border)' }}
       >
         <AppHeader showSettings={false} />
         <p
+          data-testid="score"
           style={{
             fontFamily: "'Fira Code', monospace",
             fontSize: '0.75rem',
@@ -146,13 +147,13 @@ export default function GameScreen() {
       </header>
 
       {/* Fretboard */}
-      <div className="px-6 pt-6">
-        <FretboardSVG highlights={highlights} isLeftHanded={isLeftHanded} />
+      <div className="game-fretboard px-6 pt-6">
+        <FretboardSVG highlights={highlights} isLeftHanded={isLeftHanded} isFlipped={isTabView} />
       </div>
 
       {/* Note display + controls */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-6 px-8 pb-10">
-        <div className="text-center">
+      <div className="game-controls flex-1 flex flex-col items-center justify-center gap-6 px-8">
+        <div className="game-note-group text-center">
           <p className="section-label" style={{ marginBottom: '20px' }}>
             Play this note
           </p>
@@ -163,7 +164,7 @@ export default function GameScreen() {
             <p
               key={state.status === 'correct' ? `${state.currentNote}-correct` : state.currentNote}
               data-testid="current-note"
-              className={state.status === 'correct' ? 'anim-note-correct' : 'anim-note-advance'}
+              className={`game-note-display ${state.status === 'correct' ? 'anim-note-correct' : 'anim-note-advance'}`}
               style={{
                 fontFamily: "'Bebas Neue', cursive",
                 fontSize: 'clamp(5.5rem, 16vw, 8rem)',
@@ -197,13 +198,15 @@ export default function GameScreen() {
           </div>
         </div>
 
-        <div className="heard-chip">
-          Heard:<span data-testid="heard-note">{formatNote(heardNote)}</span>
+        <div className="game-bottom-row">
+          <span className="game-score-mobile">Score: {state.score}</span>
+          <div className="heard-chip">
+            Heard:<span data-testid="heard-note">{formatNote(heardNote)}</span>
+          </div>
+          <button onClick={quit} className="btn-quit">
+            Quit
+          </button>
         </div>
-
-        <button onClick={quit} className="btn-quit">
-          Quit
-        </button>
       </div>
     </div>
   )

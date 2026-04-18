@@ -4,6 +4,9 @@ export function usePreferences() {
   const [isLeftHanded, setIsLeftHanded] = useState(
     () => localStorage.getItem('isLeftHanded') === 'true',
   )
+  const [isTabView, setIsTabView] = useState(
+    () => localStorage.getItem('isTabView') === 'true',
+  )
 
   const toggleHandedness = useCallback(() => {
     setIsLeftHanded((prev) => {
@@ -13,5 +16,13 @@ export function usePreferences() {
     })
   }, [])
 
-  return { isLeftHanded, toggleHandedness }
+  const toggleTabView = useCallback(() => {
+    setIsTabView((prev) => {
+      const next = !prev
+      localStorage.setItem('isTabView', String(next))
+      return next
+    })
+  }, [])
+
+  return { isLeftHanded, toggleHandedness, isTabView, toggleTabView }
 }
