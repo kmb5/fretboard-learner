@@ -1,8 +1,18 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { GameSessionProvider } from '../game/GameSessionProvider'
 import ModeSelector from './ModeSelector'
+
+// GameScreen (rendered after Start) starts the PitchDetector; stub it out so
+// jsdom doesn't hit navigator.mediaDevices (which doesn't exist in the test env).
+vi.mock('../pitch-detector/PitchDetector', () => ({
+  createPitchDetector: () => ({
+    start: vi.fn().mockResolvedValue(undefined),
+    stop: vi.fn(),
+    onNote: vi.fn(),
+  }),
+}))
 
 function renderModeSelector() {
   return render(

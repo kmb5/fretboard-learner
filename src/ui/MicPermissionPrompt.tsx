@@ -1,16 +1,19 @@
+import AppHeader from './AppHeader'
+
 interface Props {
+  errorMessage: string
   onRetry: () => void
 }
 
-export default function MicPermissionPrompt({ onRetry }: Props) {
+export default function MicPermissionPrompt({ errorMessage, onRetry }: Props) {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center gap-6 p-8">
-      <h1 className="text-3xl font-bold tracking-wide">Fretboard Learner</h1>
+      <AppHeader />
 
       <div className="text-center max-w-sm">
-        <p className="text-zinc-300 mb-2">Microphone access is required to detect notes.</p>
+        <p className="text-zinc-300 mb-2">{errorMessage}</p>
         <p className="text-zinc-500 text-sm">
-          Allow microphone access in your browser settings, then try again.
+          Check your browser settings, then try again.
         </p>
       </div>
 

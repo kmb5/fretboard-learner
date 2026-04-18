@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGameSession } from '../game/GameSessionProvider'
 import type { SessionStatus } from '../game/GameSession'
 import type { Difficulty } from '../game/GameMode'
@@ -6,6 +6,7 @@ import { createPitchDetector } from '../pitch-detector/PitchDetector'
 import FretboardSVG from '../fretboard/FretboardSVG'
 import type { HighlightSpec } from '../fretboard/FretboardSVG'
 import { getAllPositionsForNote } from '../music-theory/MusicTheory'
+import AppHeader from './AppHeader'
 import MicPermissionPrompt from './MicPermissionPrompt'
 
 // ---------------------------------------------------------------------------
@@ -13,14 +14,14 @@ import MicPermissionPrompt from './MicPermissionPrompt'
 // ---------------------------------------------------------------------------
 
 /** Time after last detected note before the "Heard" indicator resets to —. */
-const SILENCE_RESET_MS = 2000
+export const SILENCE_RESET_MS = 2000
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 const NOTE_COLOR_CLASS: Record<SessionStatus, string> = {
-  idle: 'text-amber-400',
+  idle: 'text-amber-400', // defensive; GameScreen is never rendered in idle state
   waiting: 'text-amber-400',
   correct: 'text-green-400',
   wrong: 'text-red-400',
@@ -55,8 +56,10 @@ export default function GameScreen() {
 
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [heardNote, setHeardNote] = useState<string>('—')
-  const [micDenied, setMicDenied] = useState(false)
-  const [retryCount, setRetryCount] = useState(0)
+  const [micError, setMicError] = useState<string | null>(null)
+  // micInitKey is incremented by handleRetry to re-run this effect and create
+  // a fresh detector after a permission denial or other recoverable mic error.
+  const [micInitKey, setMicInitKey] = useState(0)
 
   useEffect(() => {
     const detector = createPitchDetector()
@@ -72,7 +75,11 @@ export default function GameScreen() {
 
     detector.start().catch((err: unknown) => {
       if (err instanceof DOMException && err.name === 'NotAllowedError') {
-        setMicDenied(true)
+        setMicError('Microphone access was denied.')
+      } else if (err instanceof DOMException && err.name === 'NotFoundError') {
+        setMicError('No microphone found.')
+      } else {
+        throw err
       }
     })
 
@@ -83,22 +90,25 @@ export default function GameScreen() {
       }
       detector.stop()
     }
-  }, [noteDetected, retryCount])
+  }, [noteDetected, micInitKey])
 
   const handleRetry = () => {
-    setMicDenied(false)
-    setRetryCount((c) => c + 1)
+    setMicError(null)
+    setMicInitKey((k) => k + 1)
   }
 
-  if (micDenied) {
-    return <MicPermissionPrompt onRetry={handleRetry} />
-  }
+  const highlights = useMemo(
+    () => computeHighlights(state.status, state.difficulty, state.currentNote),
+    [state.status, state.difficulty, state.currentNote],
+  )
 
-  const highlights = computeHighlights(state.status, state.difficulty, state.currentNote)
+  if (micError !== null) {
+    return <MicPermissionPrompt errorMessage={micError} onRetry={handleRetry} />
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col gap-8 p-8">
-      <h1 className="text-3xl font-bold tracking-wide text-center">Fretboard Learner</h1>
+      <AppHeader />
 
       <div className="w-full">
         <FretboardSVG highlights={highlights} />
