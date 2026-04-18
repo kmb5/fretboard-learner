@@ -20,7 +20,11 @@ function GearIcon() {
   )
 }
 
-export default function AppHeader() {
+interface Props {
+  showSettings?: boolean
+}
+
+export default function AppHeader({ showSettings = true }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   return (
@@ -37,25 +41,29 @@ export default function AppHeader() {
       >
         Fretboard Learner
       </h1>
-      <button
-        onClick={() => setSettingsOpen(true)}
-        aria-label="Open settings"
-        style={{
-          background: 'transparent',
-          border: '1px solid var(--border)',
-          borderRadius: '7px',
-          cursor: 'pointer',
-          color: 'var(--fg-2)',
-          padding: '5px 7px',
-          display: 'flex',
-          alignItems: 'center',
-          transition: 'border-color 0.18s, color 0.18s',
-          lineHeight: 0,
-        }}
-      >
-        <GearIcon />
-      </button>
-      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      {showSettings && (
+        <>
+          <button
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Open settings"
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              borderRadius: '7px',
+              cursor: 'pointer',
+              color: 'var(--fg-2)',
+              padding: '5px 7px',
+              display: 'flex',
+              alignItems: 'center',
+              transition: 'border-color 0.18s, color 0.18s',
+              lineHeight: 0,
+            }}
+          >
+            <GearIcon />
+          </button>
+          <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+        </>
+      )}
     </div>
   )
 }
