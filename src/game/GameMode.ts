@@ -22,6 +22,47 @@ export interface GameModeConfig {
 }
 
 // ---------------------------------------------------------------------------
+// NotePool
+// ---------------------------------------------------------------------------
+
+/**
+ * Holds a fixed set of candidate notes and tracks the current target.
+ *
+ * Centralises the three responsibilities that were duplicated across every
+ * GameMode class:
+ *   - randomly selecting the next target from the pool
+ *   - storing the current target so isMatch() can compare against it
+ *   - normalising enharmonic spellings before comparing
+ *
+ * The pool itself is built by each GameMode's constructor and injected here;
+ * NotePool is intentionally unaware of how the pool was derived.
+ */
+export class NotePool {
+  private readonly notes: string[]
+  private currentNote = ''
+
+  constructor(notes: string[]) {
+    if (notes.length === 0) throw new Error('NotePool requires at least one note')
+    this.notes = notes
+  }
+
+  /** Pick a random note from the pool, store it as current, and return it. */
+  pick(): string {
+    this.currentNote = this.notes[Math.floor(Math.random() * this.notes.length)]
+    return this.currentNote
+  }
+
+  /**
+   * Return true if `played` is an enharmonic match for the current target.
+   * Both sides are normalised to canonical sharp form before comparison so
+   * e.g. 'Bb' matches 'A#' and vice-versa.
+   */
+  isMatch(played: string): boolean {
+    return toCanonicalSharp(played) === toCanonicalSharp(this.currentNote)
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Mode registry
 // ---------------------------------------------------------------------------
 
@@ -79,8 +120,7 @@ export interface GameMode {
 export class RandomStringMode implements GameMode {
   readonly id = RANDOM_STRING_MODE_ID
   private readonly string: StringName | null
-  private readonly notePool: string[]
-  private currentNote = ''
+  private readonly pool: NotePool
 
   constructor(string: StringName | null, noteFilter: NoteFilter = 'sharps') {
     this.string = string
@@ -101,8 +141,9 @@ export class RandomStringMode implements GameMode {
     }
 
     // Apply filter.
+    let notes: string[]
     if (noteFilter === 'naturals') {
-      this.notePool = basePool.filter((n) => NATURAL_NOTES.has(n))
+      notes = basePool.filter((n) => NATURAL_NOTES.has(n))
     } else if (noteFilter === 'all') {
       // Include both sharp and flat names so each enharmonic can be the target.
       const pool: string[] = []
@@ -111,20 +152,21 @@ export class RandomStringMode implements GameMode {
         const flat = SHARP_TO_FLAT[n]
         if (flat) pool.push(flat)
       }
-      this.notePool = pool
+      notes = pool
     } else {
       // 'sharps' — original behaviour
-      this.notePool = basePool
+      notes = basePool
     }
+
+    this.pool = new NotePool(notes)
   }
 
   getNextNote(): string {
-    this.currentNote = this.pickRandom()
-    return this.currentNote
+    return this.pool.pick()
   }
 
   isValidAnswer(played: string): boolean {
-    return toCanonicalSharp(played) === toCanonicalSharp(this.currentNote)
+    return this.pool.isMatch(played)
   }
 
   getConfig(): GameModeConfig {
@@ -137,10 +179,6 @@ export class RandomStringMode implements GameMode {
 
   getStringFilter(): StringName | null {
     return this.string
-  }
-
-  private pickRandom(): string {
-    return this.notePool[Math.floor(Math.random() * this.notePool.length)]
   }
 }
 
@@ -185,25 +223,24 @@ export class ScaleMode implements GameMode {
   readonly id = SCALE_MODE_ID
   private readonly key: NoteName
   private readonly scale: ScaleType
-  private readonly notePool: string[]
-  private currentNote = ''
+  private readonly pool: NotePool
 
   constructor(key: NoteName, scale: ScaleType) {
     this.key = key
     this.scale = scale
     const rawNotes = getNotesInScale(key, scale)
-    this.notePool = FLAT_PREFERRED_ROOTS.has(key)
+    const notes = FLAT_PREFERRED_ROOTS.has(key)
       ? rawNotes.map((n) => SHARP_TO_FLAT[n] ?? n)
       : rawNotes
+    this.pool = new NotePool(notes)
   }
 
   getNextNote(): string {
-    this.currentNote = this.notePool[Math.floor(Math.random() * this.notePool.length)]
-    return this.currentNote
+    return this.pool.pick()
   }
 
   isValidAnswer(played: string): boolean {
-    return toCanonicalSharp(played) === toCanonicalSharp(this.currentNote)
+    return this.pool.isMatch(played)
   }
 
   getConfig(): GameModeConfig {
@@ -254,25 +291,24 @@ export class ChordTonesMode implements GameMode {
   readonly id = CHORD_TONES_MODE_ID
   private readonly key: NoteName
   private readonly chord: ChordType
-  private readonly notePool: string[]
-  private currentNote = ''
+  private readonly pool: NotePool
 
   constructor(key: NoteName, chord: ChordType) {
     this.key = key
     this.chord = chord
     const rawNotes = getChordTones(key, chord)
-    this.notePool = FLAT_PREFERRED_ROOTS.has(key)
+    const notes = FLAT_PREFERRED_ROOTS.has(key)
       ? rawNotes.map((n) => SHARP_TO_FLAT[n] ?? n)
       : rawNotes
+    this.pool = new NotePool(notes)
   }
 
   getNextNote(): string {
-    this.currentNote = this.notePool[Math.floor(Math.random() * this.notePool.length)]
-    return this.currentNote
+    return this.pool.pick()
   }
 
   isValidAnswer(played: string): boolean {
-    return toCanonicalSharp(played) === toCanonicalSharp(this.currentNote)
+    return this.pool.isMatch(played)
   }
 
   getConfig(): GameModeConfig {
