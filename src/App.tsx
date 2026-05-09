@@ -1,4 +1,5 @@
 import { GameSessionProvider, useGameSession } from './game/GameSessionProvider'
+import { PreferencesProvider } from './hooks/usePreferences'
 import ModeSelector from './ui/ModeSelector'
 import GameScreen from './ui/GameScreen'
 import PortraitOverlay from './ui/PortraitOverlay'
@@ -11,9 +12,11 @@ function AppRoutes() {
 export default function App() {
   return (
     <>
-      <GameSessionProvider>
-        <AppRoutes />
-      </GameSessionProvider>
+      <PreferencesProvider>
+        <GameSessionProvider>
+          <AppRoutes />
+        </GameSessionProvider>
+      </PreferencesProvider>
       {/* Always in the DOM; CSS (orientation: portrait) controls visibility */}
       <PortraitOverlay />
     </>

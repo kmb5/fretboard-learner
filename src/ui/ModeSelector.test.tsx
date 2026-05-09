@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import { GameSessionProvider } from '../game/GameSessionProvider'
+import { PreferencesProvider } from '../hooks/usePreferences'
 import ModeSelector from './ModeSelector'
 
 // GameScreen (rendered after Start) starts the PitchDetector; stub it out so
@@ -16,9 +17,11 @@ vi.mock('../pitch-detector/PitchDetector', () => ({
 
 function renderModeSelector() {
   return render(
-    <GameSessionProvider>
-      <ModeSelector />
-    </GameSessionProvider>,
+    <PreferencesProvider>
+      <GameSessionProvider>
+        <ModeSelector />
+      </GameSessionProvider>
+    </PreferencesProvider>,
   )
 }
 
