@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useGameSession } from '../game/GameSessionProvider'
 import type { SessionStatus } from '../game/GameSession'
-import type { Difficulty } from '../game/GameMode'
 import { createPitchDetector } from '../pitch-detector/PitchDetector'
 import FretboardSVG from '../fretboard/FretboardSVG'
-import type { HighlightSpec } from '../fretboard/FretboardSVG'
-import { getAllPositionsForNote, toCanonicalSharp, formatNote } from '../music-theory/MusicTheory'
-import type { StringName } from '../music-theory/MusicTheory'
+import { computeHighlights } from '../fretboard/computeHighlights'
+import { formatNote } from '../music-theory/MusicTheory'
 import AppHeader from './AppHeader'
 import MicPermissionPrompt from './MicPermissionPrompt'
 import { usePreferences } from '../hooks/usePreferences'
@@ -29,30 +27,6 @@ const NOTE_COLOR: Record<SessionStatus, string> = {
   wrong:   'var(--red)',
 }
 
-
-function computeHighlights(
-  status: SessionStatus,
-  difficulty: Difficulty,
-  currentNote: string,
-  stringFilter: StringName | null,
-): HighlightSpec[] {
-  if (!currentNote) return []
-  const allPositions = getAllPositionsForNote(toCanonicalSharp(currentNote))
-  const positions = stringFilter === null
-    ? allPositions
-    : allPositions.filter((p) => p.string === stringFilter)
-
-  if (status === 'correct') {
-    return positions.map((p) => ({ position: p, color: 'green' as const }))
-  }
-  if (status === 'wrong' && difficulty === 'learning') {
-    return positions.map((p) => ({ position: p, color: 'red' as const }))
-  }
-  if (status === 'waiting' && difficulty === 'learning') {
-    return positions.map((p) => ({ position: p, color: 'amber' as const }))
-  }
-  return []
-}
 
 // ---------------------------------------------------------------------------
 // Component
