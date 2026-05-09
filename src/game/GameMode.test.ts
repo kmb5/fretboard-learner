@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  NotePool,
   RandomStringMode,
   ScaleMode,
   ChordTonesMode,
@@ -417,5 +418,75 @@ describe('ChordTonesMode — flat display for flat-preferred roots', () => {
     }
     if (!found) return
     expect(mode.isValidAnswer('A#')).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// NotePool
+// ---------------------------------------------------------------------------
+
+describe('NotePool — pick', () => {
+  it('always returns a note from the pool', () => {
+    const pool = new NotePool(['A', 'B', 'C'])
+    for (let i = 0; i < 50; i++) {
+      expect(['A', 'B', 'C']).toContain(pool.pick())
+    }
+  })
+
+  it('can return every note in the pool across enough picks', () => {
+    const pool = new NotePool(['A', 'B', 'C'])
+    const seen = new Set<string>()
+    for (let i = 0; i < 200; i++) seen.add(pool.pick())
+    expect(seen).toEqual(new Set(['A', 'B', 'C']))
+  })
+
+  it('works with a single-note pool', () => {
+    const pool = new NotePool(['G'])
+    expect(pool.pick()).toBe('G')
+  })
+
+  it('throws when constructed with an empty array', () => {
+    expect(() => new NotePool([])).toThrow('NotePool requires at least one note')
+  })
+})
+
+describe('NotePool — isMatch', () => {
+  it('returns true when played matches the last picked note exactly', () => {
+    const pool = new NotePool(['A', 'B', 'C'])
+    const note = pool.pick()
+    expect(pool.isMatch(note)).toBe(true)
+  })
+
+  it('returns false for a note other than the last picked', () => {
+    const pool = new NotePool(['A'])
+    pool.pick() // picks 'A'
+    expect(pool.isMatch('B')).toBe(false)
+  })
+
+  it('accepts enharmonic flat when the target is sharp (A# ↔ Bb)', () => {
+    const pool = new NotePool(['A#'])
+    pool.pick()
+    expect(pool.isMatch('Bb')).toBe(true)
+  })
+
+  it('accepts enharmonic sharp when the target is flat (Bb ↔ A#)', () => {
+    const pool = new NotePool(['Bb'])
+    pool.pick()
+    expect(pool.isMatch('A#')).toBe(true)
+  })
+
+  it('reflects the most recent pick — not an earlier one', () => {
+    const pool = new NotePool(['A', 'C#'])
+    // Pick until we see both notes, then verify isMatch tracks the latest
+    let last = ''
+    for (let i = 0; i < 50; i++) {
+      last = pool.pick()
+    }
+    expect(pool.isMatch(last)).toBe(true)
+    // Verify a note that is NOT last does not match (only valid when pool has >1 note
+    // and the other note is different from last)
+    const other = last === 'A' ? 'C#' : 'A'
+    // They are enharmonically distinct, so other should not match
+    expect(pool.isMatch(other)).toBe(false)
   })
 })
