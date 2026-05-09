@@ -3,6 +3,7 @@ import {
   RandomStringMode,
   ScaleMode,
   ChordTonesMode,
+  createGameMode,
   SCALE_TYPES,
   CHORD_TYPES,
   RANDOM_STRING_MODE_ID,
@@ -417,5 +418,68 @@ describe('ChordTonesMode — flat display for flat-preferred roots', () => {
     }
     if (!found) return
     expect(mode.isValidAnswer('A#')).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// createGameMode factory
+// ---------------------------------------------------------------------------
+
+describe('createGameMode — Random String', () => {
+  it('returns a RandomStringMode instance with the correct id', () => {
+    const mode = createGameMode({ mode: RANDOM_STRING_MODE_ID, string: 'A', noteFilter: 'sharps' })
+    expect(mode.id).toBe(RANDOM_STRING_MODE_ID)
+  })
+
+  it('maps string null (All) correctly', () => {
+    const mode = createGameMode({ mode: RANDOM_STRING_MODE_ID, string: null, noteFilter: 'sharps' })
+    expect(mode.getStringFilter()).toBeNull()
+  })
+
+  it('maps a specific string correctly', () => {
+    const mode = createGameMode({ mode: RANDOM_STRING_MODE_ID, string: 'E', noteFilter: 'sharps' })
+    expect(mode.getStringFilter()).toBe('E')
+  })
+
+  it('passes noteFilter through (naturals pool contains only natural notes)', () => {
+    const naturals = new Set(['C', 'D', 'E', 'F', 'G', 'A', 'B'])
+    const mode = createGameMode({ mode: RANDOM_STRING_MODE_ID, string: null, noteFilter: 'naturals' })
+    for (let i = 0; i < 100; i++) {
+      expect(naturals.has(mode.getNextNote())).toBe(true)
+    }
+  })
+})
+
+describe('createGameMode — Scale', () => {
+  it('returns a ScaleMode instance with the correct id', () => {
+    const mode = createGameMode({ mode: SCALE_MODE_ID, key: 'C', scale: 'major' })
+    expect(mode.id).toBe(SCALE_MODE_ID)
+  })
+
+  it('getConfig label contains key and scale name', () => {
+    const mode = createGameMode({ mode: SCALE_MODE_ID, key: 'G', scale: 'blues' })
+    expect(mode.getConfig().label).toContain('G')
+    expect(mode.getConfig().label).toContain('Blues')
+  })
+
+  it('getStringFilter returns null', () => {
+    expect(createGameMode({ mode: SCALE_MODE_ID, key: 'A', scale: 'major' }).getStringFilter()).toBeNull()
+  })
+})
+
+describe('createGameMode — Chord Tones', () => {
+  it('returns a ChordTonesMode instance with the correct id', () => {
+    const mode = createGameMode({ mode: CHORD_TONES_MODE_ID, key: 'C', chord: 'major' })
+    expect(mode.id).toBe(CHORD_TONES_MODE_ID)
+  })
+
+  it('getConfig label contains key and chord name', () => {
+    const mode = createGameMode({ mode: CHORD_TONES_MODE_ID, key: 'E', chord: 'minor' })
+    expect(mode.getConfig().label).toContain('E')
+    expect(mode.getConfig().label).toContain('Minor')
+  })
+
+  it('getStringFilter returns null', () => {
+    expect(createGameMode({ mode: CHORD_TONES_MODE_ID, key: 'D', chord: 'dominant7' }).getStringFilter()).toBeNull()
   })
 })

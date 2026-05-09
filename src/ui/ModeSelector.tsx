@@ -2,9 +2,7 @@ import { useState, useCallback } from 'react'
 import { useGameSession } from '../game/GameSessionProvider'
 import SettingsModal from './SettingsModal'
 import {
-  RandomStringMode,
-  ScaleMode,
-  ChordTonesMode,
+  createGameMode,
   SCALE_LABELS,
   SCALE_TYPES,
   CHORD_TYPE_LABELS,
@@ -47,13 +45,17 @@ export default function ModeSelector() {
   const handleStart = useCallback(() => {
     if (modeType === RANDOM_STRING_MODE_ID) {
       if (selectedString === null) return
-      startSession(new RandomStringMode(selectedString === 'all' ? null : selectedString, noteFilter), difficulty)
+      startSession(createGameMode({
+        mode: RANDOM_STRING_MODE_ID,
+        string: selectedString === 'all' ? null : selectedString,
+        noteFilter,
+      }), difficulty)
     } else if (modeType === SCALE_MODE_ID) {
       if (selectedKey === null || selectedScale === null) return
-      startSession(new ScaleMode(selectedKey, selectedScale), difficulty)
+      startSession(createGameMode({ mode: SCALE_MODE_ID, key: selectedKey, scale: selectedScale }), difficulty)
     } else {
       if (selectedKey === null || selectedChordType === null) return
-      startSession(new ChordTonesMode(selectedKey, selectedChordType), difficulty)
+      startSession(createGameMode({ mode: CHORD_TONES_MODE_ID, key: selectedKey, chord: selectedChordType }), difficulty)
     }
   }, [modeType, selectedString, selectedKey, selectedScale, selectedChordType, difficulty, noteFilter, startSession])
 

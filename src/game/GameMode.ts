@@ -283,3 +283,51 @@ export class ChordTonesMode implements GameMode {
     return null
   }
 }
+
+// ---------------------------------------------------------------------------
+// ModeConfig — plain-data description of a user's selection
+// ---------------------------------------------------------------------------
+
+/**
+ * Discriminated union describing every valid game-mode configuration that the
+ * mode-selector UI can produce.  Keeping this as plain data (no class
+ * instances, no functions) means ModeSelector only has to describe *what* the
+ * user picked — not *how* to build a mode from it.
+ */
+export type ModeConfig =
+  | {
+      mode: typeof RANDOM_STRING_MODE_ID
+      /** The selected string, or null when "All strings" is chosen. */
+      string: StringName | null
+      noteFilter: NoteFilter
+    }
+  | {
+      mode: typeof SCALE_MODE_ID
+      key: NoteName
+      scale: ScaleType
+    }
+  | {
+      mode: typeof CHORD_TONES_MODE_ID
+      key: NoteName
+      chord: ChordType
+    }
+
+// ---------------------------------------------------------------------------
+// createGameMode — factory
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert a plain ModeConfig (produced by ModeSelector) into the appropriate
+ * GameMode instance.  All constructor-argument knowledge lives here, next to
+ * the class definitions it references — not in the UI layer.
+ */
+export function createGameMode(config: ModeConfig): GameMode {
+  switch (config.mode) {
+    case RANDOM_STRING_MODE_ID:
+      return new RandomStringMode(config.string, config.noteFilter)
+    case SCALE_MODE_ID:
+      return new ScaleMode(config.key, config.scale)
+    case CHORD_TONES_MODE_ID:
+      return new ChordTonesMode(config.key, config.chord)
+  }
+}
